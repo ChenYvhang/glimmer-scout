@@ -1,0 +1,43 @@
+# 种子关键词表 — Stage1 search.list 输入
+# search.list 单价100 units，整个采集流程严格限20次以内（见 quota.py CALL_CAP）。
+# 每个关键词消耗1次调用；下表 <=20 条，如需扩容频道池，优先扩大 channels/videos
+# 批量抓取范围，而不是无限加关键词。
+#
+# vertical: 用于季节因子聚合与前端展示的垂类标签（中文），与频道后续打标一致。
+seeds:
+  - keyword: "ski pov"
+    vertical: "滑雪"
+  - keyword: "滑雪"
+    vertical: "滑雪"
+  - keyword: "snowboard pov"
+    vertical: "滑雪"
+  - keyword: "mtb trail"
+    vertical: "骑行"
+  - keyword: "骑行 vlog"
+    vertical: "骑行"
+  - keyword: "downhill mountain biking"
+    vertical: "骑行"
+  - keyword: "surf pov"
+    vertical: "冲浪"
+  - keyword: "freediving"
+    vertical: "潜水"
+  - keyword: "潜水 vlog"
+    vertical: "潜水"
+  - keyword: "scuba diving pov"
+    vertical: "潜水"
+  - keyword: "moto vlog"
+    vertical: "摩托"
+  - keyword: "motorcycle pov ride"
+    vertical: "摩托"
+  - keyword: "trail running"
+    vertical: "越野跑"
+  - keyword: "越野跑"
+    vertical: "越野跑"
+  - keyword: "climbing pov"
+    vertical: "攀岩"
+  - keyword: "攀岩"
+    vertical: "攀岩"
+  - keyword: "extreme sports pov"
+    vertical: "极限运动综合"
+  - keyword: "action camera vlog"
+    vertical: "极限运动综合"
