@@ -1,4 +1,7 @@
-# NextScout 引爆雷达 — 实施计划（PLAN）
+# Glimmer Scout 微光寻者 — 实施计划（PLAN）
+
+> 2026-07-17 品牌更名：NextScout 引爆雷达 → Glimmer Scout 微光寻者（仅品牌名与主题色调整，
+> 页面功能名"引爆矩阵/回测对照/系统状态"及后端 schema 字段名如 `backtest.nextscout` 不变）。
 
 > 状态：Stage1-3 已完成并验证通过，见第7节执行清单。
 

@@ -134,7 +134,7 @@ function MetricCard({
   return (
     <div className="border border-white/10 rounded-xl p-3 bg-white/[0.02]">
       <div className="text-[11px] text-gray-500">{label}</div>
-      <div className={clsx("text-lg font-semibold mt-0.5", highlight ? "text-fuchsia-300" : "text-gray-200")}>
+      <div className={clsx("text-lg font-semibold mt-0.5", highlight ? "text-glimmer-300" : "text-gray-200")}>
         {value}
       </div>
       {sub && <div className="text-[11px] text-gray-600 mt-1">{sub}</div>}

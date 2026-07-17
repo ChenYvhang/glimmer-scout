@@ -165,7 +165,7 @@ export default function MatrixPage() {
                 cursor="pointer"
               >
                 {points.map((p) => (
-                  <Cell key={p.channel_id} fill={p.hasDecision ? "#c084fc" : "#38bdf8"} />
+                  <Cell key={p.channel_id} fill={p.hasDecision ? "#c98500" : "#0284c7"} />
                 ))}
               </Scatter>
             </ScatterChart>
@@ -173,10 +173,10 @@ export default function MatrixPage() {
         </div>
         <div className="flex gap-4 mt-2 text-xs text-gray-500">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-fuchsia-400 inline-block" /> 已生成决策卡
+            <span className="w-2 h-2 rounded-full bg-glimmer-400 inline-block" /> 已生成决策卡
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-sky-400 inline-block" /> 仅有匹配分
+            <span className="w-2 h-2 rounded-full bg-signal-400 inline-block" /> 仅有匹配分
           </span>
           <span>圆点大小 = 订阅数</span>
         </div>
@@ -208,7 +208,7 @@ export default function MatrixPage() {
                 >
                   <td className="px-3 py-2 text-gray-200 max-w-[220px] truncate">{p.title}</td>
                   <td className="px-3 py-2 text-gray-500">{p.vertical}</td>
-                  <td className="px-3 py-2 text-right text-fuchsia-300">{p.potential.toFixed(1)}</td>
+                  <td className="px-3 py-2 text-right text-glimmer-300">{p.potential.toFixed(1)}</td>
                   <td className="px-3 py-2 text-right text-sky-300">{p.resonance.toFixed(1)}</td>
                   <td className="px-3 py-2 text-right text-gray-200">{p.combined.toFixed(1)}</td>
                   <td className="px-3 py-2 text-right text-gray-500">{p.subscriber_count.toLocaleString()}</td>
@@ -216,7 +216,7 @@ export default function MatrixPage() {
                     <span
                       className={clsx(
                         "inline-block w-2 h-2 rounded-full",
-                        p.hasDecision ? "bg-fuchsia-400" : "bg-gray-700",
+                        p.hasDecision ? "bg-glimmer-400" : "bg-gray-700",
                       )}
                     />
                   </td>

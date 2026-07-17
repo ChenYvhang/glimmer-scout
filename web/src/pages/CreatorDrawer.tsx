@@ -61,7 +61,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
               href={creator.channel_url}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-fuchsia-400 hover:underline"
+              className="text-xs text-glimmer-400 hover:underline"
             >
               {creator.channel_url}
             </a>
@@ -125,7 +125,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                     <Line
                       type="monotone"
                       dataKey="relative_velocity"
-                      stroke="#c084fc"
+                      stroke="#c98500"
                       dot={false}
                       strokeWidth={2}
                       name="相对动能"
@@ -133,7 +133,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                     <Line
                       type="monotone"
                       dataKey="season_adjusted_velocity"
-                      stroke="#38bdf8"
+                      stroke="#0284c7"
                       dot={false}
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
@@ -171,7 +171,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
             <div className="flex items-center gap-6 mb-3">
               <div>
                 <div className="text-xs text-gray-500">潜力分 P</div>
-                <div className="text-2xl font-semibold text-fuchsia-300">{fmtNum(creator.scores.potential.value, 1)}</div>
+                <div className="text-2xl font-semibold text-glimmer-300">{fmtNum(creator.scores.potential.value, 1)}</div>
               </div>
             </div>
             {creator.scores.resonance ? (
@@ -216,7 +216,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
             {creator.decision ? (
               <div className="space-y-3 text-sm">
                 <div className="flex flex-wrap gap-3 items-center">
-                  <span className="px-2 py-1 rounded-md bg-fuchsia-500/15 text-fuchsia-300 text-xs">
+                  <span className="px-2 py-1 rounded-md bg-glimmer-500/15 text-glimmer-300 text-xs">
                     推荐单品：{productById.get(creator.decision.recommended_product)?.name ?? creator.decision.recommended_product}
                   </span>
                   <span className="text-xs text-gray-500">

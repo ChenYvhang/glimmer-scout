@@ -36,7 +36,7 @@ export default function BacktestPage() {
               />
               <Bar dataKey="hit_rate" radius={[6, 6, 0, 0]}>
                 {chartData.map((d) => (
-                  <Cell key={d.kind} fill={d.kind === "nextscout" ? "#c084fc" : "#4b5563"} />
+                  <Cell key={d.kind} fill={d.kind === "nextscout" ? "#c98500" : "#4b5563"} />
                 ))}
               </Bar>
             </BarChart>
@@ -44,7 +44,7 @@ export default function BacktestPage() {
         </div>
         <div className="mt-4 flex items-center justify-center gap-8 text-sm">
           <Metric label="基线命中率" value={`${(backtest.baseline.hit_rate * 100).toFixed(0)}%`} />
-          <Metric label="NextScout命中率" value={`${(backtest.nextscout.hit_rate * 100).toFixed(0)}%`} highlight />
+          <Metric label="Glimmer Scout命中率" value={`${(backtest.nextscout.hit_rate * 100).toFixed(0)}%`} highlight />
           <Metric label="Lift" value={`${backtest.lift.toFixed(1)}×`} highlight />
           <Metric label="有效样本数" value={`${backtest.eligible_channel_count}`} />
         </div>
@@ -82,7 +82,7 @@ export default function BacktestPage() {
                   <span className="w-48 shrink-0 text-gray-400 truncate">{f.feature}</span>
                   <div className="flex-1 bg-white/5 rounded h-3 overflow-hidden">
                     <div
-                      className={f.contribution >= 0 ? "bg-fuchsia-400 h-full" : "bg-sky-400 h-full"}
+                      className={f.contribution >= 0 ? "bg-glimmer-400 h-full" : "bg-signal-400 h-full"}
                       style={{ width: `${widthPct}%` }}
                     />
                   </div>
@@ -116,7 +116,7 @@ function Metric({
           warn
             ? "text-lg font-semibold text-amber-300"
             : highlight
-              ? "text-lg font-semibold text-fuchsia-300"
+              ? "text-lg font-semibold text-glimmer-300"
               : "text-lg font-semibold text-gray-200"
         }
       >

@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  /* "微光" brand accent — validated against --color-signal-400 for dark-surface
+     categorical use (CVD deltaE, contrast, lightness band) via the dataviz skill's
+     validator; do not swap the hex without re-running it. */
+  --color-glimmer-300: #eda100;
+  --color-glimmer-400: #c98500;
+  --color-glimmer-500: #a86e00;
+  --color-signal-400: #0284c7;
+}
+
 :root {
   color-scheme: light dark;
 }
@@ -11,7 +21,11 @@ html, body, #root {
 body {
   margin: 0;
   font-family: system-ui, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: #0b0d12;
+  background:
+    radial-gradient(900px 480px at 15% -10%, rgba(201, 133, 0, 0.10), transparent 60%),
+    radial-gradient(700px 420px at 100% 0%, rgba(2, 132, 199, 0.08), transparent 55%),
+    #0b0d12;
+  background-attachment: fixed;
   color: #e5e7eb;
 }
 
