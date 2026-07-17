@@ -11,6 +11,7 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
+import clsx from "clsx";
 import { useDataset } from "../lib/useDataset";
 import { Loading } from "../components/Loading";
 import type { BacktestTier, TopKResult } from "../lib/schema";
@@ -57,18 +58,14 @@ export default function BacktestPage() {
       <div>
         <h1 className="text-xl font-semibold text-white mb-1">回测对照</h1>
         <p className="text-sm text-gray-500">
-          评估口径：训练用滑动切分点（切分前 30/60/90/120/150 天）扩充样本，评估固定切分点前 60 天的单一快照，
-          避免同一频道在榜单里重复计数。
-          标签口径：切分点后视频相对动能的中位数，相对切分点前中位数的涨幅 ≥{" "}
-          {potential_model.label_threshold.threshold_used} 倍
-          {potential_model.label_threshold.relaxed ? "（默认 1.5 倍下正样本率不足 5%，已自动放宽）" : ""}
-          ，且切分点后 ≥50% 的视频个体表现都超过切分点前中位数，两者同时满足才算"加速"。
+          评估固定切分点前 60 天快照；标签为切分点后动能中位数较之前涨幅 ≥
+          {potential_model.label_threshold.threshold_used} 倍且 ≥50% 视频个体加速。
         </p>
       </div>
 
       <section>
         <h2 className="text-sm font-semibold text-gray-300 mb-3">
-          分层 Top-20 / Top-100 命中率（按订阅数分层，剥夺基线"靠体量躺赢"的优势）
+          分层命中率（按订阅数分层，Top-20 / Top-100）
         </h2>
         <div className="border border-white/10 rounded-xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
@@ -98,18 +95,14 @@ export default function BacktestPage() {
           </table>
         </div>
         <p className="text-xs text-gray-600 mt-2">
-          "样本不足"的分层仅供参考，不计入结论；&lt;1K 订阅频道（{backtest.excluded_below_1k_count} 个）不参与分层，只计入 global 行。
-        </p>
-        <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-          global 的 lift 明显高于各分层，是因为按订阅数排序的 baseline Top-20 几乎全部落在体量最大的一档，
-          而模型排序不受体量限制，能优先选出更容易加速的中小频道——这体现的是"能否挖到潜力新星"，
-          而不是"同量级内谁排得更准"；后者要看上方各分层各自的 lift。
+          样本不足的分层仅供参考；&lt;1K 订阅频道（{backtest.excluded_below_1k_count} 个）仅计入全局行。
+          全局 lift 反映挖掘潜力新星的能力，分层 lift 反映同量级排序精度。
         </p>
       </section>
 
       <section>
         <h2 className="text-sm font-semibold text-gray-300 mb-3">Top-20 vs Top-100（global）</h2>
-        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02]">
+        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-glimmer-500/25">
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kScanData} margin={{ left: 0, right: 20, top: 10 }}>
@@ -129,7 +122,7 @@ export default function BacktestPage() {
         <h2 className="text-sm font-semibold text-gray-300 mb-3">
           {potential_model.method === "dual_head_gbdt" ? "双头模型（排序头 + 概率头）" : "启发式打分"} · 校准与置信区间
         </h2>
-        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] space-y-4">
+        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] space-y-4 transition-colors duration-300 hover:border-glimmer-500/25">
           <div className="grid grid-cols-3 gap-4 text-sm">
             <Metric label="训练样本数" value={`${potential_model.training_sample_count}`} />
             <Metric label="正例占比" value={`${((potential_model.positive_label_rate ?? 0) * 100).toFixed(1)}%`} />
@@ -201,7 +194,7 @@ function FeatureImportanceChart({ title, entries }: { title: string; entries: { 
   const top = entries.slice(0, 8);
   const maxImportance = Math.max(...top.map((e) => e.importance), 1);
   return (
-    <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02]">
+    <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-glimmer-500/25">
       <h3 className="text-xs font-medium text-gray-400 mb-3">{title}</h3>
       <div className="space-y-1.5">
         {top.map((e) => (
@@ -222,7 +215,7 @@ function TierRow({ tier, highlight }: { tier: BacktestTier; highlight?: boolean 
   const k20 = tier.per_k["20"];
   const k100 = tier.per_k["100"];
   return (
-    <tr className={highlight ? "bg-glimmer-500/5 font-medium" : "border-t border-white/5"}>
+    <tr className={clsx("transition-colors duration-150 hover:bg-white/[0.04]", highlight ? "bg-glimmer-500/5 font-medium" : "border-t border-white/5")}>
       <td className="px-3 py-2 text-gray-200">{tier.tier === "global" ? "全局" : tier.tier}</td>
       <td className="px-3 py-2 text-right text-gray-400">{tier.n_candidates}</td>
       <td className="px-3 py-2 text-right text-gray-400">{tier.n_positive}</td>

@@ -89,7 +89,7 @@ export default function MatrixPage() {
           <select
             value={activeProductId ?? ""}
             onChange={(e) => setProductId(e.target.value)}
-            className="bg-[#12141b] border border-white/15 rounded-md text-sm px-3 py-1.5 text-gray-200"
+            className="bg-[#12141b] border border-white/15 rounded-md text-sm px-3 py-1.5 text-gray-200 transition-colors duration-200 focus:outline-none focus:border-glimmer-400/60"
           >
             {data.products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -100,7 +100,7 @@ export default function MatrixPage() {
           <select
             value={vertical}
             onChange={(e) => setVertical(e.target.value)}
-            className="bg-[#12141b] border border-white/15 rounded-md text-sm px-3 py-1.5 text-gray-200"
+            className="bg-[#12141b] border border-white/15 rounded-md text-sm px-3 py-1.5 text-gray-200 transition-colors duration-200 focus:outline-none focus:border-glimmer-400/60"
           >
             {verticals.map((v) => (
               <option key={v} value={v}>
@@ -112,7 +112,7 @@ export default function MatrixPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索达人名称…"
-            className="bg-[#12141b] border border-white/15 rounded-md text-sm px-3 py-1.5 text-gray-200 placeholder:text-gray-600"
+            className="bg-[#12141b] border border-white/15 rounded-md text-sm px-3 py-1.5 text-gray-200 placeholder:text-gray-600 transition-colors duration-200 focus:outline-none focus:border-glimmer-400/60"
           />
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function MatrixPage() {
         <p className="text-xs text-gray-500 mb-3">{activeProduct.description}</p>
       )}
 
-      <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02]">
+      <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-glimmer-500/25">
         <div className="h-[420px]">
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
@@ -173,7 +173,7 @@ export default function MatrixPage() {
         </div>
         <div className="flex gap-4 mt-2 text-xs text-gray-500">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-glimmer-400 inline-block" /> 已生成决策卡
+            <span className="w-2 h-2 rounded-full bg-glimmer-400 inline-block shadow-[0_0_6px_1px_rgba(237,161,0,0.7)] animate-pulse" /> 已生成决策卡
           </span>
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-signal-400 inline-block" /> 仅有匹配分
@@ -204,7 +204,7 @@ export default function MatrixPage() {
                 <tr
                   key={p.channel_id}
                   onClick={() => setSelectedChannelId(p.channel_id)}
-                  className="border-t border-white/5 hover:bg-white/[0.04] cursor-pointer"
+                  className="border-t border-white/5 hover:bg-white/[0.04] cursor-pointer transition-colors duration-150"
                 >
                   <td className="px-3 py-2 text-gray-200 max-w-[220px] truncate">{p.title}</td>
                   <td className="px-3 py-2 text-gray-500">{p.vertical}</td>
@@ -216,7 +216,7 @@ export default function MatrixPage() {
                     <span
                       className={clsx(
                         "inline-block w-2 h-2 rounded-full",
-                        p.hasDecision ? "bg-glimmer-400" : "bg-gray-700",
+                        p.hasDecision ? "bg-glimmer-400 shadow-[0_0_5px_1px_rgba(237,161,0,0.6)]" : "bg-gray-700",
                       )}
                     />
                   </td>

@@ -52,8 +52,8 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-[720px] h-full bg-[#12141b] border-l border-white/10 overflow-y-auto shadow-2xl">
+      <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={onClose} />
+      <div className="relative w-full max-w-[720px] h-full bg-[#12141b] border-l border-white/10 overflow-y-auto shadow-2xl animate-slide-in-right">
         <div className="sticky top-0 bg-[#12141b]/95 backdrop-blur border-b border-white/10 px-6 py-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-white truncate">{creator.title}</h2>
@@ -69,7 +69,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 text-gray-400 hover:text-white text-xl leading-none px-2"
+            className="shrink-0 text-gray-400 hover:text-white text-xl leading-none px-2 transition-all duration-200 hover:rotate-90"
             aria-label="关闭"
           >
             ×
@@ -162,7 +162,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                 </p>
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">未分析——该频道尚未进入视觉理解队列，属实覆盖率限制，非数据缺陷。</p>
+              <p className="text-gray-500 text-sm">未分析——尚未进入视觉理解队列。</p>
             )}
           </Section>
 
@@ -180,7 +180,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                   const product = productById.get(productId);
                   const data = Object.entries(r.feature_breakdown).map(([name, value]) => ({ name, value }));
                   return (
-                    <div key={productId} className="border border-white/10 rounded-lg p-3">
+                    <div key={productId} className="border border-white/10 rounded-lg p-3 transition-colors duration-300 hover:border-signal-400/30">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-200">{product?.name ?? productId}</span>
                         <span className="text-sm text-sky-300 font-semibold">R = {fmtNum(r.value, 1)}</span>
@@ -207,7 +207,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                 })}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">共振分待计算——依赖视觉理解结果，该频道尚未覆盖。</p>
+              <p className="text-gray-500 text-sm">共振分待计算——依赖视觉理解结果。</p>
             )}
           </Section>
 
@@ -243,7 +243,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
 
                 <div className="space-y-2 mt-2">
                   {creator.decision.creative_variants.map((variant) => (
-                    <div key={variant.variant_name} className="border border-white/10 rounded-lg p-3">
+                    <div key={variant.variant_name} className="border border-white/10 rounded-lg p-3 transition-colors duration-300 hover:border-glimmer-500/30">
                       <div className="font-medium text-gray-200 text-sm mb-1">{variant.variant_name}</div>
                       <p className="text-gray-400 text-xs leading-relaxed mb-2">{variant.script_direction}</p>
                       <ul className="list-disc list-inside text-xs text-gray-400 space-y-0.5 mb-2">
@@ -260,9 +260,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">
-                未生成——决策卡仅对潜力/共振综合分Top-60预生成，该频道不在当前批次内。
-              </p>
+              <p className="text-gray-500 text-sm">未生成——决策卡仅对综合分 Top-60 预生成。</p>
             )}
           </Section>
         </div>

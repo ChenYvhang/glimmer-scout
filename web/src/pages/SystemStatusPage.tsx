@@ -24,7 +24,7 @@ export default function SystemStatusPage() {
           {meta.architecture_layers.map((layer) => (
             <div
               key={layer.layer}
-              className="border border-white/10 rounded-xl p-4 bg-white/[0.02] flex items-start gap-4"
+              className="border border-white/10 rounded-xl p-4 bg-white/[0.02] flex items-start gap-4 transition-colors duration-300 hover:border-glimmer-500/25"
             >
               <div className="w-20 shrink-0 text-sm font-medium text-gray-200 pt-0.5">{layer.layer}</div>
               <div className="flex-1">
@@ -43,7 +43,7 @@ export default function SystemStatusPage() {
             <span
               key={ds.platform}
               className={clsx(
-                "px-3 py-1.5 rounded-full text-xs border",
+                "px-3 py-1.5 rounded-full text-xs border transition-transform duration-200 hover:scale-105",
                 ds.status === "connected"
                   ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
                   : "bg-gray-500/15 text-gray-500 border-gray-500/30",
@@ -102,8 +102,7 @@ export default function SystemStatusPage() {
             </span>
           </div>
           <p className="text-xs text-gray-500">
-            relative_velocity 按 age_bucket 分组均值不随年龄单调漂移（斜率 {meta.age_bias_validation.slope.toFixed(4)}{" "}
-            远小于组间标准差 {meta.age_bias_validation.spread_for_reference.toFixed(4)}），累积播放量偏差已消除。
+            相对动能不随频道年龄单调漂移，累积播放量偏差已消除。
           </p>
         </div>
       </section>
@@ -132,7 +131,7 @@ function MetricCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="border border-white/10 rounded-xl p-3 bg-white/[0.02]">
+    <div className="border border-white/10 rounded-xl p-3 bg-white/[0.02] transition-all duration-300 hover:border-glimmer-500/25 hover:-translate-y-0.5">
       <div className="text-[11px] text-gray-500">{label}</div>
       <div className={clsx("text-lg font-semibold mt-0.5", highlight ? "text-glimmer-300" : "text-gray-200")}>
         {value}
