@@ -16,8 +16,10 @@ from pathlib import Path
 import yaml
 
 from pipeline.common.logging import get_logger
+from pipeline.score import SUBSCRIBER_TIERS, TOP_K_LIST
 
 logger = get_logger("build")
+SUBSCRIBER_TIER_NAMES = [t[0] for t in SUBSCRIBER_TIERS]
 
 ROOT = Path(__file__).resolve().parent
 ARTIFACTS_DIR = ROOT / "artifacts"
@@ -89,7 +91,10 @@ def build_creator(channel: dict, score_entry: dict | None, vision: dict | None, 
         "features": channel.get("features"),
         "vision": vision,  # None if not yet analyzed — frontend must render "待分析"
         "scores": {
-            "potential": {"value": potential, "method": None} if potential is not None else None,
+            # potential is {"value","value_lo","value_hi","rank_score"} for
+            # dual_head_gbdt, or just {"value"} for the heuristic fallback —
+            # "method" is filled in below once known globally.
+            "potential": {**potential, "method": None} if potential is not None else None,
             "resonance": resonance,  # dict of product_id -> {value, contributions, feature_breakdown}, or None
         },
         "decision": decision,  # None if not in the pre-generated set — frontend must render "未生成"
@@ -107,7 +112,8 @@ def run() -> dict:
 
     channels = features_data["channels"]
     scores_by_id = scores_data["scores"] if scores_data else {}
-    potential_method = scores_data["potential"]["method"] if scores_data else None
+    potential_meta = scores_data["potential"] if scores_data else None
+    potential_method = potential_meta["method"] if potential_meta else None
 
     creators = []
     for ch in channels:
@@ -135,7 +141,7 @@ def run() -> dict:
             "quota_used": {**quota_log.get("units", {}), "total": sum(quota_log.get("units", {}).values())},
             "model_status": {
                 "potential_score_model": potential_method,
-                "gbdt_sample_count": scores_data["potential"]["training_sample_count"] if scores_data else None,
+                "gbdt_sample_count": potential_meta["training_sample_count"] if potential_meta else None,
             },
             "vision_coverage": {"analyzed": vision_covered, "total": len(creators),
                                  "note": "免费视觉模型限速，未覆盖频道vision/resonance为null，非缺陷"},
@@ -151,14 +157,31 @@ def run() -> dict:
             "architecture_layers": ARCHITECTURE_LAYERS,
         },
         "season_coefs": features_data["season_coefs"],
+        "channel_split": scores_data["channel_split"] if scores_data else None,
         "potential_model": {
             "method": potential_method,
-            "training_sample_count": scores_data["potential"]["training_sample_count"] if scores_data else None,
-            "positive_label_rate": scores_data["potential"]["positive_label_rate"] if scores_data else None,
-            "holdout_metrics": scores_data["potential"]["holdout_metrics"] if scores_data else None,
-            "feature_importance": scores_data["potential"]["feature_importance"] if scores_data else None,
-        } if scores_data else None,
-        "backtest": scores_data["backtest"] if scores_data else None,
+            "training_sample_count": potential_meta["training_sample_count"],
+            "positive_label_rate": potential_meta["positive_label_rate"],
+            "label_threshold": potential_meta["threshold_stats"],
+            "grade_cuts": potential_meta["grade_cuts"],
+            "calibration": potential_meta["calibration"],
+            "feature_importance": potential_meta["feature_importance"],
+        } if potential_meta else None,
+        # Stratified Top-K backtest (REFACTOR_PLAN.md §1.4): "global" + one
+        # entry per subscriber tier, each with baseline/model hit-rate and
+        # lift at K=10/20/50/100. Replaces the old single baseline-vs-model
+        # number — a single global lift hid that some tiers (e.g. 1K-10K)
+        # can have lift < 1, which is a real, reportable result, not noise
+        # to average away.
+        "backtest": {
+            "primary_k": potential_meta["backtest_stratified"]["primary_k"],
+            "k_values": TOP_K_LIST,
+            "tiers": [
+                {"tier": tier, **potential_meta["backtest_stratified"][tier]}
+                for tier in (["global"] + SUBSCRIBER_TIER_NAMES)
+            ],
+            "excluded_below_1k_count": potential_meta["backtest_stratified"]["excluded_below_1k"]["count"],
+        } if potential_meta and potential_meta.get("backtest_stratified") else None,
         "products": products,
         "creators": creators,
     }

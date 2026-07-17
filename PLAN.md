@@ -390,12 +390,28 @@
       validate_report.json的漂移检测结果）。未覆盖vision/decision的频道
       对应字段为null，前端需渲染"待分析"/"未生成"。
       （产物：`web/public/dataset.json`，可随时重新build叠加最新缓存）
-- [ ] 9. 前端（系统状态页需新增复盘层"待接入"诚实说明卡片）
+- [x] 9. 前端（Vite+React+TS+Tailwind+Recharts）—— 已跑通并验证：`tsc --noEmit`
+      与 `vite build` 均无错误，schema.ts 与当前 dataset.json 顶层字段
+      （`potential_model`/`backtest.eligible_channel_count` 等，AUC已移除）
+      完全对齐。系统状态页 `SystemStatusPage.tsx` 通用渲染
+      `meta.architecture_layers`，四层（含"复盘层"status=pending）都会显示
+      徽章+说明文字，满足"诚实说明卡片"要求，无需额外硬编码。
+      （因浏览器扩展未连接，本次未做可视化截图验证，仅完成编译期/构建期验证；
+      建议下次有浏览器可用时用 `npm run dev` 实机过一遍四个页面确认视觉效果）
 
 ### 下次继续时怎么说
-直接说"接着做下一步"即可。当前后台仍有两个任务在跑：
-vision.py（top-180-by-potential，免费层慢，预计还要几小时到十几小时）、
-decide.py（对当前已有vision数据的候选跑决策卡）。两者随时可中断/继续，
-dataset.json可以用`python -m pipeline.build`随时重新生成叠加最新进度。
-下一步是前端（Vite+React+TS+Tailwind+Recharts），可以先用当前的
-dataset.json搭起来，不需要等后台任务完全跑完。
+2026-07-18 复查：之前提到的后台任务（vision.py/decide.py）已不在运行
+（无残留python进程），最终停在 vision/decision 覆盖率 **351/518**（未覆盖的
+167个频道对应字段为null，前端正确显示"待分析"）。Stage1-9全部完成，
+PLAN执行清单已全部勾选。
+
+剩余可选的后续工作（非必须，需用户决定是否继续，因为会消耗真实API配额/费用）：
+1. 继续跑 vision.py + decide.py 把剩余167个频道覆盖率补到518/518；
+2. score.py的GBDT样本量（278个，约40正例）偏少导致AUC不稳定的问题，
+   PLAN第7节已如实记录并决定移除AUC指标，若要真正解决需要扩大采集规模
+   （更多频道/更长历史），非几分钟能做完；
+3. 前端目前只做了编译期/构建期验证（`tsc --noEmit`、`vite build`均通过），
+   未做过浏览器实机视觉验证（当次会话浏览器扩展未连接），建议找机会
+   `npm run dev` 实机看一遍四个页面。
+若用户说"继续"，默认应先询问是否要扩大vision/decide覆盖率（涉及真实费用），
+而不是默认帮忙执行。

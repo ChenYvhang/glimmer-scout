@@ -11,7 +11,7 @@ export interface QuotaUsed {
 }
 
 export interface ModelStatus {
-  potential_score_model: "gbdt" | "heuristic";
+  potential_score_model: "dual_head_gbdt" | "heuristic";
   gbdt_sample_count: number;
 }
 
@@ -61,30 +61,70 @@ export interface SeasonCoef {
   sample_size: number;
 }
 
+export interface CalibrationBin {
+  bin_lo: number;
+  bin_hi: number;
+  n: number;
+  mean_predicted: number | null;
+  observed_frequency: number | null;
+}
+
+export interface Calibration {
+  brier_score: number;
+  target_coverage: number;
+  actual_coverage: number | null;
+  n_calibration_rows: number;
+  calibration_curve: CalibrationBin[];
+}
+
+export interface LabelThreshold {
+  threshold_used: number;
+  positive_rate: number;
+  relaxed: boolean;
+  positive_rate_at_default_threshold?: number;
+}
+
 export interface FeatureImportanceEntry {
   feature: string;
-  contribution: number;
+  importance: number; // % of total gain, within one head
+}
+
+export interface FeatureImportance {
+  ranker: FeatureImportanceEntry[];
+  regressor: FeatureImportanceEntry[];
+  method: string; // human-readable caveat about what this is (and isn't)
 }
 
 export interface PotentialModel {
-  method: "gbdt" | "heuristic";
+  method: "dual_head_gbdt" | "heuristic";
   training_sample_count: number;
-  positive_label_rate: number;
-  holdout_metrics: {
-    accuracy: number;
-    test_size: number;
-    train_size: number;
-  };
-  feature_importance: FeatureImportanceEntry[];
+  positive_label_rate: number | null;
+  label_threshold: LabelThreshold;
+  grade_cuts: number[] | null;
+  calibration: Calibration | null;
+  feature_importance: FeatureImportance | null;
+}
+
+export interface TopKResult {
+  baseline_hit_rate: number;
+  model_hit_rate: number;
+  lift: number | null;
+  scored_n: number;
+}
+
+export interface BacktestTier {
+  tier: string; // "global" | "1K-10K" | "10K-50K" | "50K-200K" | "200K-1M" | "1M+"
+  n_candidates: number;
+  n_positive: number;
+  insufficient_sample: boolean;
+  per_k: Record<"10" | "20" | "50" | "100", TopKResult>;
 }
 
 export interface Backtest {
-  method: string;
-  eligible_channel_count: number;
-  top_k: number;
-  baseline: { name: string; hit_rate: number };
-  nextscout: { name: string; hit_rate: number };
-  lift: number;
+  primary_k: number;
+  k_values: number[];
+  tiers: BacktestTier[]; // tiers[0] is always "global"
+  excluded_below_1k_count: number;
 }
 
 export interface FeatureWeight {
@@ -151,7 +191,10 @@ export interface CreatorVision {
 
 export interface PotentialScore {
   value: number;
-  method: "gbdt" | "heuristic";
+  value_lo?: number;
+  value_hi?: number;
+  rank_score?: number;
+  method: "dual_head_gbdt" | "heuristic";
 }
 
 export interface ResonanceContribution {
@@ -221,9 +264,15 @@ export interface Creator {
   decision: CreatorDecision | null;
 }
 
+export interface ChannelSplit {
+  main_pool: number;
+  auxiliary_holdout: number;
+}
+
 export interface Dataset {
   meta: DatasetMeta;
   season_coefs: Record<string, SeasonCoef>;
+  channel_split: ChannelSplit;
   potential_model: PotentialModel;
   backtest: Backtest;
   products: Product[];

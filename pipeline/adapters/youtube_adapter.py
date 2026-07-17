@@ -34,7 +34,14 @@ class YouTubeAdapter(PlatformAdapter):
         params = {**params, "key": self.api_key}
         return get_json(f"{BASE_URL}/{endpoint}", params=params)
 
-    def discover_seed_channels(self, seeds: list[dict], max_search_calls: int) -> dict[str, str]:
+    def discover_seed_channels(self, seeds: list[dict], max_search_calls: int, search_type: str = "video") -> dict[str, str]:
+        """search_type='video' (original): search for videos, extract the posting
+        channel's id from snippet.channelId. search_type='channel' (added for the
+        2000+ channel expansion, REFACTOR_PLAN.md §3.1): search for channels
+        directly, id.channelId — YouTube's ranking for the two search types
+        differs enough that the same keyword surfaces a different channel set,
+        which is why the expansion re-queries the original keywords too instead
+        of only adding new ones."""
         channel_vertical: dict[str, str] = {}
         calls_made = 0
         for seed in seeds:
@@ -54,23 +61,26 @@ class YouTubeAdapter(PlatformAdapter):
                     {
                         "part": "snippet",
                         "q": keyword,
-                        "type": "video",
+                        "type": search_type,
                         "maxResults": 50,
                         "relevanceLanguage": "en" if keyword.isascii() else "zh-Hans",
                         "order": "relevance",
                     },
                 )
             except Exception as exc:
-                logger.warning("search.list failed for keyword=%r: %s — skipping", keyword, exc)
+                logger.warning("search.list failed for keyword=%r (type=%s): %s — skipping", keyword, search_type, exc)
                 continue
             items = data.get("items", [])
             found = 0
             for item in items:
-                cid = item.get("snippet", {}).get("channelId")
+                if search_type == "channel":
+                    cid = item.get("id", {}).get("channelId")
+                else:
+                    cid = item.get("snippet", {}).get("channelId")
                 if cid and cid not in channel_vertical:
                     channel_vertical[cid] = vertical
                     found += 1
-            logger.info("keyword=%r -> %d new channels (total %d)", keyword, found, len(channel_vertical))
+            logger.info("keyword=%r (type=%s) -> %d new channels (total %d)", keyword, search_type, found, len(channel_vertical))
         return channel_vertical
 
     def fetch_channel_snapshots(self, channel_ids: list[str]) -> list[dict]:

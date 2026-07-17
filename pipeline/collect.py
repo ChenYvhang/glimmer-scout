@@ -47,7 +47,40 @@ def load_seeds() -> list[dict]:
     return data["seeds"]
 
 
-def run(limit_channels: int | None, max_search_calls: int | None, force_search_refresh: bool = False):
+def _print_quota_budget_plan(quota: QuotaTracker, extend_calls: int | None, existing_candidate_count: int) -> None:
+    """Informational pre-flight estimate (REFACTOR_PLAN.md §3.1: 'print the
+    budget table before running'). Not a gate — the real backstop is
+    QuotaTracker's DAILY_UNIT_BUDGET check, which raises on every call, not
+    just at the start."""
+    already_used = sum(quota.units.values())
+    search_cost = (extend_calls or 0) * 100
+    # rough yield assumption for logging only, not used to block anything:
+    # type=channel search historically yields ~30-50 unique channels/call
+    # before cross-call dedup; call it 35/call net-new as a conservative mid estimate.
+    est_new_candidates_lo = int((extend_calls or 0) * 20)
+    est_new_candidates_hi = int((extend_calls or 0) * 45)
+    est_total_candidates_lo = existing_candidate_count + est_new_candidates_lo
+    est_total_candidates_hi = existing_candidate_count + est_new_candidates_hi
+    # collection cost ~2 units/candidate (1 playlistItems.list + ~1 videos.list share)
+    est_collection_cost_lo = est_total_candidates_lo * 2
+    est_collection_cost_hi = est_total_candidates_hi * 2
+    logger.info("=== 配额预算表（今日已用 %d units，日预算 %d units）===", already_used, DAILY_UNIT_BUDGET_FOR_LOG)
+    logger.info("计划新增 search.list 调用: %d 次 x 100 units = %d units", extend_calls or 0, search_cost)
+    logger.info("预计新增候选频道: %d-%d（现有候选 %d，估算总候选 %d-%d）",
+                est_new_candidates_lo, est_new_candidates_hi, existing_candidate_count,
+                est_total_candidates_lo, est_total_candidates_hi)
+    logger.info("预计下游采集消耗（channels/playlistItems/videos.list，约2 units/候选频道）: %d-%d units",
+                est_collection_cost_lo, est_collection_cost_hi)
+    logger.info("预计今日总消耗: %d-%d units（含已用 %d units）",
+                already_used + search_cost + est_collection_cost_lo,
+                already_used + search_cost + est_collection_cost_hi, already_used)
+
+
+DAILY_UNIT_BUDGET_FOR_LOG = 10000  # mirrors quota.DAILY_UNIT_BUDGET, for the log line only
+
+
+def run(limit_channels: int | None, max_search_calls: int | None, force_search_refresh: bool = False,
+        extend_discovery_calls: int | None = None, extend_search_type: str = "channel"):
     load_dotenv(ROOT.parent / ".env")
     api_key = os.environ.get("YOUTUBE_API_KEY")
     if not api_key:
@@ -70,6 +103,21 @@ def run(limit_channels: int | None, max_search_calls: int | None, force_search_r
             "search.list is a one-time cost for the whole project, not per run ===",
             len(channel_vertical), SEED_CACHE_PATH,
         )
+        if extend_discovery_calls:
+            _print_quota_budget_plan(quota, extend_discovery_calls, len(channel_vertical))
+            logger.info(
+                "=== extending seed discovery: %d new search.list calls (type=%s) ===",
+                extend_discovery_calls, extend_search_type,
+            )
+            newly_found = adapter.discover_seed_channels(seeds, extend_discovery_calls, search_type=extend_search_type)
+            added = 0
+            for cid, vertical in newly_found.items():
+                if cid not in channel_vertical:
+                    channel_vertical[cid] = vertical
+                    added += 1
+            logger.info("extend discovery done: +%d new unique channels (total now %d)", added, len(channel_vertical))
+            SEED_CACHE_PATH.write_text(json.dumps(channel_vertical, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info("updated cached seed discovery results at %s", SEED_CACHE_PATH)
     else:
         logger.info("=== seed discovery (%d seeds, max %d search.list calls) ===", len(seeds), max_search_calls)
         channel_vertical = adapter.discover_seed_channels(seeds, max_search_calls)
@@ -157,6 +205,17 @@ if __name__ == "__main__":
         "--force-search-refresh", action="store_true",
         help="re-run search.list discovery even if a seed cache exists (spends search quota again)",
     )
+    parser.add_argument(
+        "--extend-discovery-calls", type=int, default=None,
+        help="run N additional search.list calls to grow the cached candidate pool without discarding it",
+    )
+    parser.add_argument(
+        "--extend-search-type", default="channel", choices=["channel", "video"],
+        help="search.list 'type' param for the extension calls (default: channel)",
+    )
     args = parser.parse_args()
-    result = run(args.limit_channels, args.max_search_calls, args.force_search_refresh)
+    result = run(
+        args.limit_channels, args.max_search_calls, args.force_search_refresh,
+        args.extend_discovery_calls, args.extend_search_type,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))

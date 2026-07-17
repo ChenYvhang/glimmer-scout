@@ -112,7 +112,7 @@ export default function SystemStatusPage() {
         <h2 className="text-sm font-semibold text-gray-300 mb-3">潜力分模型状态</h2>
         <MetricCard
           label="模型类型"
-          value={meta.model_status.potential_score_model === "gbdt" ? "GBDT（真训练）" : "启发式（样本不足）"}
+          value={meta.model_status.potential_score_model === "dual_head_gbdt" ? "双头GBDT（真训练）" : "启发式（样本不足）"}
           sub={`训练样本数 ${meta.model_status.gbdt_sample_count}`}
         />
       </section>

@@ -30,7 +30,12 @@ UNIT_COST = {
 }
 
 CALL_CAP = {
-    "search": 20,  # hard breaker, per project rule — never raise silently
+    # 2026-07-18: raised 20 -> 90 for the 518->2000+ channel expansion
+    # (REFACTOR_PLAN.md §3.1 decision 1, approved by user). The daily
+    # DAILY_UNIT_BUDGET check below is the real backstop against overspend —
+    # this call-count cap exists so a config/loop bug can't spin indefinitely,
+    # not to arbitrarily block a larger, deliberately-planned discovery run.
+    "search": 90,
 }
 
 DAILY_UNIT_BUDGET = 10000
