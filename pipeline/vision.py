@@ -1,4 +1,4 @@
-"""Stage3 — multimodal understanding via GLM-4.6V-Flash (free tier).
+"""Stage3 — multimodal understanding via GLM-4.6V-Flash.
 
 Input: real YouTube thumbnails (i.ytimg.com, no video download) + real title/
 description/tags metadata, 6-8 videos per channel. Output: an 8-dim
@@ -6,37 +6,41 @@ content_vector in the shared semantic space defined in config/dimensions.yaml
 (same space products.yaml uses), plus human-readable evidence quoting the
 actual thumbnails/titles that justify the score.
 
-API confirmed from https://docs.bigmodel.cn/cn/guide/models/vlm/glm-4.6v on
-2026-07-16 (not from memory, per project rule):
-  - model name: glm-4.6v-flash (free tier)
-  - base_url: https://open.bigmodel.cn/api/paas/v4
-  - OpenAI-compatible chat/completions; a single user message's `content` can
-    hold multiple {"type": "image_url", "image_url": {"url": ...}} entries
-    plus one {"type": "text", ...}
-  - Bearer token auth
-  - No confirmed JSON-mode parameter, so JSON-ness is enforced via prompt and
-    verified by parsing the response; malformed output triggers a retry.
+Two backends, same model family, selected with --backend:
 
-Deviation found by hands-on testing (docs did not mention this): passing a
-remote https:// URL in image_url.url reliably fails with HTTP 400 "图片参数
-格式/内容错误" after ~30s (the server appears to attempt and fail to fetch
-it). Base64 data URIs work. So every thumbnail is downloaded once and sent
-as a data:image/jpeg;base64,... URI. The free tier also errors with HTTP 429
-"该模型当前并发数过高" under concurrent requests, so calls are serialized
-(CONCURRENCY=1) despite the project's "<=3" ceiling being technically looser.
+  zhipu (cloud, free tier) — API confirmed from
+  https://docs.bigmodel.cn/cn/guide/models/vlm/glm-4.6v on 2026-07-16 (not
+  from memory, per project rule):
+    - model name: glm-4.6v-flash
+    - base_url: https://open.bigmodel.cn/api/paas/v4
+    - Bearer token auth (ZHIPU_API_KEY)
+  Deviation found by hands-on testing (docs did not mention this): passing a
+  remote https:// URL in image_url.url reliably fails with HTTP 400 "图片参数
+  格式/内容错误" after ~30s (the server appears to attempt and fail to fetch
+  it). Base64 data URIs work — used for both backends below. The free tier
+  also errors with HTTP 429 "该模型当前并发数过高" under concurrent requests,
+  and individual calls have been observed to stall for minutes (occasionally
+  longer) with the connection still technically alive — this is what pushed
+  us to add a local backend.
 
-Also observed: some free-tier calls stall for minutes (occasionally longer)
-with the connection still technically alive (no single read gap exceeds
-requests' own timeout, so requests never raises on its own). Each attempt is
-therefore wrapped in a hard wall-clock timeout (see
-common.http.call_with_wall_clock_timeout) using the single-shot
-post_json_once, with our own retry/backoff loop on top — instead of nesting
-this wall clock around the already-retrying post_json, which would let one
-stalled attempt multiply into a worst case of minutes x 3 internal retries.
+  ollama (local, default) — same GLM-4.6V-Flash-9B weights (community GGUF
+  quantization, q4_K_M) run locally via Ollama's OpenAI-compatible endpoint.
+  API confirmed from https://docs.ollama.com/api/openai-compatibility on
+  2026-07-17 (not from memory): base_url http://localhost:11434/v1, same
+  nested {"type": "image_url", "image_url": {"url": "data:...;base64,..."}}
+  content shape as the cloud API (verified against the docs, not assumed
+  from the OpenAI spec), API key required by client shape but ignored by the
+  server. No rate limiting since it's local, so REQUEST_SPACING_SECONDS=0;
+  kept CONCURRENCY=1 anyway since 8GB VRAM has no headroom for a second
+  6-8-image context alongside the 6.2GB model. Cache records "model" as
+  glm-4.6v-flash-9b-ollama-local-q4km — distinct from the cloud tag — since
+  a community GGUF quantization is not provably identical output to the
+  cloud-served model and the dataset should not claim otherwise.
 
 Run:
     python -m pipeline.vision --limit-channels 3   # validation run
     python -m pipeline.vision                       # full run (cached, resumable)
+    python -m pipeline.vision --backend zhipu        # use the cloud free tier instead
 """
 import argparse
 import base64
@@ -63,14 +67,30 @@ DIMENSIONS_PATH = ROOT / "config" / "dimensions.yaml"
 CACHE_DIR = ROOT / "cache" / "vision"
 FAILURES_PATH = ROOT / "artifacts" / "vision_failures.json"
 
-MODEL_NAME = "glm-4.6v-flash"
-BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
+BACKENDS = {
+    "zhipu": {
+        "model": "glm-4.6v-flash",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+        "requires_api_key_env": "ZHIPU_API_KEY",
+        "request_spacing_seconds": 1.5,  # politeness gap; free tier serializes anyway
+        "call_wall_clock_timeout_seconds": 60,  # observed stalls can run for minutes regardless
+        "model_tag": "glm-4.6v-flash",
+    },
+    "ollama": {
+        "model": "haervwe/GLM-4.6V-Flash-9B",
+        "base_url": "http://localhost:11434/v1",
+        "requires_api_key_env": None,  # ignored by the local server
+        "request_spacing_seconds": 0,  # no external rate limit
+        "call_wall_clock_timeout_seconds": 300,  # 9.7GB model on 8GB VRAM splits 50/50 CPU/GPU;
+        # observed one real (non-stalled) call take ~163s warm — 180s was too tight and caused
+        # a spurious timeout on a channel that would have succeeded given more time
+        "model_tag": "glm-4.6v-flash-9b-ollama-local-q4km",
+    },
+}
 MAX_THUMBS_PER_CHANNEL = 8
 MIN_THUMBS_PER_CHANNEL = 6
 MAX_MODEL_RETRIES = 3
-CONCURRENCY = 1  # free-tier hits HTTP 429 "并发数过高" under concurrent calls
-REQUEST_SPACING_SECONDS = 1.5  # politeness gap between sequential calls
-CALL_WALL_CLOCK_TIMEOUT_SECONDS = 60  # per-attempt hard cap; observed stalls can run for minutes
+CONCURRENCY = 1  # zhipu free-tier hits HTTP 429 under concurrency; ollama has no VRAM headroom for 2nd context
 RETRY_BACKOFF_SECONDS = (2, 4, 8)
 
 REQUIRED_STRING_FIELDS = ["camera_perspective", "narrative_pace", "evidence"]
@@ -179,7 +199,8 @@ def _validate_vision_json(data: dict) -> None:
 
 
 class VisionAdapter:
-    def __init__(self, api_key: str, dims: list[dict]):
+    def __init__(self, backend: dict, api_key: str, dims: list[dict]):
+        self.backend = backend
         self.api_key = api_key
         self.system_prompt = build_system_prompt(dims)
 
@@ -190,28 +211,31 @@ class VisionAdapter:
                 f"only {len(videos)} thumbnails available, need >= {MIN_THUMBS_PER_CHANNEL}"
             )
         payload = {
-            "model": MODEL_NAME,
+            "model": self.backend["model"],
             "messages": [
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": build_user_content(channel, videos)},
             ],
         }
-        time.sleep(REQUEST_SPACING_SECONDS)
+        spacing = self.backend["request_spacing_seconds"]
+        if spacing:
+            time.sleep(spacing)
+        timeout_s = self.backend["call_wall_clock_timeout_seconds"]
         last_exc = None
         for attempt in range(1, MAX_MODEL_RETRIES + 1):
             try:
                 resp = call_with_wall_clock_timeout(
                     post_json_once,
-                    CALL_WALL_CLOCK_TIMEOUT_SECONDS,
-                    f"{BASE_URL}/chat/completions",
+                    timeout_s,
+                    f"{self.backend['base_url']}/chat/completions",
                     json=payload,
                     headers={"Authorization": f"Bearer {self.api_key}"},
-                    timeout=(10, CALL_WALL_CLOCK_TIMEOUT_SECONDS - 5),
+                    timeout=(10, timeout_s - 5),
                 )
                 content = resp["choices"][0]["message"]["content"]
                 data = _extract_json(content)
                 _validate_vision_json(data)
-                data["model"] = MODEL_NAME
+                data["model"] = self.backend["model_tag"]
                 data["source_video_ids"] = [v["video_id"] for v in videos]
                 data["analyzed_at"] = datetime.now(timezone.utc).isoformat()
                 return data
@@ -226,14 +250,18 @@ class VisionAdapter:
         raise last_exc
 
 
-def run(limit_channels: int | None, top_n_by_potential: int | None):
+def run(limit_channels: int | None, top_n_by_potential: int | None, backend_name: str,
+        shard_index: int = 0, shard_count: int = 1):
     load_dotenv(ROOT.parent / ".env")
-    api_key = os.environ.get("ZHIPU_API_KEY")
-    if not api_key:
-        raise SystemExit("ZHIPU_API_KEY not set in .env")
+    backend = BACKENDS[backend_name]
+    api_key = "ollama"  # placeholder; required by the client shape, ignored by the local server
+    if backend["requires_api_key_env"]:
+        api_key = os.environ.get(backend["requires_api_key_env"])
+        if not api_key:
+            raise SystemExit(f"{backend['requires_api_key_env']} not set in .env")
 
     dims = load_dimensions()
-    adapter = VisionAdapter(api_key, dims)
+    adapter = VisionAdapter(backend, api_key, dims)
 
     data = json.loads(FEATURES_PATH.read_text(encoding="utf-8"))
     channels = data["channels"]
@@ -260,6 +288,13 @@ def run(limit_channels: int | None, top_n_by_potential: int | None):
                     top_n_by_potential)
     elif limit_channels:
         pending = pending[:limit_channels]
+
+    if shard_count > 1:
+        # Lets two backends (e.g. local ollama + cloud zhipu) run at once without both
+        # grabbing the whole pending list: interleave by position so priority order
+        # (from top_n_by_potential, if used) is split fairly rather than front/back.
+        pending = [ch for i, ch in enumerate(pending) if i % shard_count == shard_index]
+        logger.info("shard %d/%d: %d channels assigned this run", shard_index, shard_count, len(pending))
 
     logger.info(
         "%d channels total, %d already cached, %d to process this run",
@@ -310,5 +345,15 @@ if __name__ == "__main__":
     parser.add_argument("--limit-channels", type=int, default=None, help="process first N pending channels (validation)")
     parser.add_argument("--top-n-by-potential", type=int, default=None,
                          help="scope to top N pending channels by potential_score (requires scores.json from score.py)")
+    parser.add_argument("--backend", choices=list(BACKENDS), default="ollama",
+                         help="ollama (local, default) or zhipu (cloud free tier)")
+    parser.add_argument("--shard-index", type=int, default=0,
+                         help="run only channels where position %% shard-count == shard-index "
+                              "(use with --shard-count to run two backends at once without overlap)")
+    parser.add_argument("--shard-count", type=int, default=1,
+                         help="total number of concurrent shards (default 1 = no sharding)")
     args = parser.parse_args()
-    print(json.dumps(run(args.limit_channels, args.top_n_by_potential), ensure_ascii=False, indent=2))
+    print(json.dumps(
+        run(args.limit_channels, args.top_n_by_potential, args.backend, args.shard_index, args.shard_count),
+        ensure_ascii=False, indent=2,
+    ))
