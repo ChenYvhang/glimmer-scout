@@ -767,6 +767,16 @@ def run() -> dict:
             k: v for k, v in calib.items() if k != "calibrator"  # sklearn model itself isn't JSON-serializable
         }
 
+        # Two passes: calibrated probability naturally clusters near the ~7%
+        # base rate for most channels (that's what "calibrated" means when
+        # most channels aren't strongly differentiated) — on a fixed 0-100
+        # scale that reads as "every score looks the same". Min-max stretch
+        # the OBSERVED probability range to fill 0-100: this keeps "value"
+        # meaning "calibrated acceleration probability" (unlike a percentile
+        # rank, which would silently redefine it as "rank among peers") and
+        # doesn't flatten the underlying skew — it only rescales linearly,
+        # so relative spacing between channels is preserved exactly.
+        raw_by_channel = {}
         for ch in channels:
             feats = extract_window_features(ch, ch["videos"], fetched_at, season_coefs)
             feats_arr = np.array([feats])
@@ -775,13 +785,29 @@ def run() -> dict:
             p = float(_predict_calibrated(calib["calibrator"], np.array([raw_reg]))[0])
             p_lo = float(_predict_calibrated(calib["calibrator"], np.array([raw_reg - calib["conformal_quantile"]]))[0])
             p_hi = float(_predict_calibrated(calib["calibrator"], np.array([raw_reg + calib["conformal_quantile"]]))[0])
-            potential_scores[ch["channel_id"]] = {
-                "value": p * 100,               # calibrated acceleration probability, 0-100 (kept as `value` for
-                                                  # backward compatibility with the field the frontend already reads)
-                "value_lo": min(p_lo, p_hi) * 100,
-                "value_hi": max(p_lo, p_hi) * 100,
-                "rank_score": rank_score,
+            raw_by_channel[ch["channel_id"]] = {
+                "p": p, "p_lo": min(p_lo, p_hi), "p_hi": max(p_lo, p_hi), "rank_score": rank_score,
             }
+
+        all_p = [v["p"] for v in raw_by_channel.values()]
+        p_min, p_max = min(all_p), max(all_p)
+        p_span = p_max - p_min
+
+        def _stretch(x: float) -> float:
+            return ((x - p_min) / p_span * 100) if p_span > 0 else x * 100
+
+        for cid, v in raw_by_channel.items():
+            potential_scores[cid] = {
+                "value": _stretch(v["p"]),      # calibrated acceleration probability, min-max stretched to use the
+                                                  # full 0-100 display range (still `value` for frontend compatibility)
+                "value_lo": _stretch(v["p_lo"]),
+                "value_hi": _stretch(v["p_hi"]),
+                "rank_score": v["rank_score"],
+            }
+        logger.info(
+            "potential value min-max stretch: raw calibrated probability observed range=[%.4f, %.4f] -> display [0,100]",
+            p_min, p_max,
+        )
     else:
         potential_meta["method"] = "heuristic"
         logger.warning(
