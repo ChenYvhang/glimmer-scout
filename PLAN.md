@@ -365,6 +365,16 @@
       过程中发现并修复了真实的look-ahead泄露：最初把订阅数/总播放量当特征喂进
       GBDT，但这两个是"现在"的累计值会泄露T之后的增长（label本身要预测的东西），
       删掉后lift从虚高的5.0降到真实的4.0。
+      2026-07-17 追加排查：怀疑AUC低是因为训练特征里漏了"加速度"这个核心信号
+      （`features.json`里的`momentum_acceleration`是相对`fetched_at`算的，直接
+      喂给T切分前的训练窗口会泄露，所以score.py一开始就没用它）——补了一个不泄露
+      的"窗口内动能"特征（只用T之前的视频，前后半段动能差值）重训，**AUC反而从
+      0.516降到0.497**，如实报告：permutation importance显示几乎所有特征贡献度
+      都在0附近，说明瓶颈是278个样本（仅约40个正例）太少，不是缺某个特征——真正
+      的修法是扩大训练样本（更多频道积累够T前后视频历史，或缩短T窗口但会削弱
+      标签可靠性），非几分钟能解决。用户决定：**从产品/前端里删除AUC这个指标**
+      （schema、score.py、BacktestPage.tsx 均已移除），保留更贴近实际决策价值的
+      Top-20命中率/lift；训练样本扩容留到下次真的重新采集数据时再做。
       （产物：`pipeline/artifacts/scores.json`，R分随vision.py进度增量更新）
 - [x] 7. decide.py：3个达人验证通过，质量好（真实引用P/R分数、feature_breakdown、
       vision evidence；竞品关键词规则命中'gopro'/'dji'后LLM给出具体排他条款建议；

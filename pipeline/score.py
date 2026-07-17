@@ -29,7 +29,7 @@ import yaml
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score
 
 from pipeline.common.logging import get_logger
 
@@ -57,11 +57,22 @@ FEATURE_NAMES = [
     "relative_velocity_mean",
     "relative_velocity_std",
     "channel_age_days_at_window_end",
+    "window_momentum_acceleration",
 ]
 # subscriber_count / view_count_total are deliberately excluded: they're
 # current-snapshot totals (single-crawl design has no as-of-T values), so
 # using them as "pre-T" features leaks post-T growth — exactly the outcome
 # the label is trying to predict — straight into the inputs.
+#
+# window_momentum_acceleration is a leakage-safe version of features.json's
+# momentum_acceleration: that field compares "recent" vs "early" relative to
+# fetched_at (the crawl time), so recent would include post-T videos if used
+# directly here — exactly what the label predicts. This recomputes the same
+# idea using ONLY videos_subset (already pre-T): split it in half by publish
+# order, late-half rv mean minus early-half rv mean. Originally the trained
+# GBDT had no acceleration signal at all despite it being the documented
+# "core signal" — this was a real gap, not a hypothetical one.
+MIN_VIDEOS_FOR_WINDOW_SPLIT = 4
 
 
 def _parse_iso(ts: str) -> datetime:
@@ -96,12 +107,23 @@ def extract_window_features(channel: dict, videos_subset: list[dict], window_end
     rv_mean = sum(rv) / len(rv) if rv else math.nan
     rv_std = statistics.stdev(rv) if len(rv) >= 2 else math.nan
 
+    if n >= MIN_VIDEOS_FOR_WINDOW_SPLIT:
+        mid = n // 2
+        early_rv = [v["relative_velocity"] for v in sorted_v[:mid] if v.get("relative_velocity") is not None]
+        late_rv = [v["relative_velocity"] for v in sorted_v[mid:] if v.get("relative_velocity") is not None]
+        window_momentum = (
+            (sum(late_rv) / len(late_rv)) - (sum(early_rv) / len(early_rv))
+            if early_rv and late_rv else math.nan
+        )
+    else:
+        window_momentum = math.nan
+
     channel_created = _parse_iso(channel["published_at"]) if channel.get("published_at") else None
     age_at_window_end = (window_end - channel_created).days if channel_created else math.nan
 
     return [
         n, interval_mean, interval_std, like_mean, comment_mean,
-        rv_mean, rv_std, age_at_window_end,
+        rv_mean, rv_std, age_at_window_end, window_momentum,
     ]
 
 
@@ -184,18 +206,13 @@ def compute_potential_scores(channels: list[dict], fetched_at: datetime) -> dict
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
-        y_proba = model.predict_proba(X_test)[:, 1]
         acc = accuracy_score(y_test, y_pred)
-        try:
-            auc = roc_auc_score(y_test, y_proba) if len(set(y_test)) > 1 else None
-        except ValueError:
-            auc = None
         result["holdout_metrics"] = {
-            "accuracy": acc, "auc": auc,
+            "accuracy": acc,
             "test_size": len(y_test), "train_size": len(y_train),
         }
-        logger.info("GBDT holdout: accuracy=%.3f auc=%s (train=%d test=%d)",
-                     acc, auc, len(y_train), len(y_test))
+        logger.info("GBDT holdout: accuracy=%.3f (train=%d test=%d)",
+                     acc, len(y_train), len(y_test))
 
         perm = permutation_importance(model, X_test, y_test, n_repeats=10, random_state=42)
         importance = sorted(

@@ -72,7 +72,6 @@ export interface PotentialModel {
   positive_label_rate: number;
   holdout_metrics: {
     accuracy: number;
-    auc: number;
     test_size: number;
     train_size: number;
   };

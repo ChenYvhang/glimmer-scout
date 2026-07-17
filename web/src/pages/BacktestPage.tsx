@@ -12,8 +12,6 @@ export default function BacktestPage() {
     { name: backtest.nextscout.name, hit_rate: backtest.nextscout.hit_rate * 100, kind: "nextscout" },
   ];
 
-  const aucIsWeak = potential_model.holdout_metrics.auc < 0.6;
-
   return (
     <div className="max-w-3xl">
       <h1 className="text-xl font-semibold text-white mb-1">回测对照</h1>
@@ -52,25 +50,11 @@ export default function BacktestPage() {
 
       <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02]">
         <h2 className="text-sm font-semibold text-gray-300 mb-3">GBDT 潜力分模型 · Holdout 指标</h2>
-        <div className="grid grid-cols-4 gap-4 text-sm mb-3">
+        <div className="grid grid-cols-3 gap-4 text-sm mb-3">
           <Metric label="训练样本数" value={`${potential_model.training_sample_count}`} />
           <Metric label="正例占比" value={`${(potential_model.positive_label_rate * 100).toFixed(1)}%`} />
           <Metric label="Accuracy" value={potential_model.holdout_metrics.accuracy.toFixed(3)} />
-          <Metric
-            label="AUC"
-            value={potential_model.holdout_metrics.auc.toFixed(3)}
-            highlight={aucIsWeak}
-            warn={aucIsWeak}
-          />
         </div>
-        {aucIsWeak && (
-          <p className="text-xs text-amber-300/90 bg-amber-500/10 rounded-md p-3 leading-relaxed">
-            AUC={potential_model.holdout_metrics.auc.toFixed(3)} 接近随机（0.5），如实报告不回避：demo
-            规模（{potential_model.training_sample_count}样本、正例占比{" "}
-            {(potential_model.positive_label_rate * 100).toFixed(1)}%）下 GBDT 的排序判别力有限，Top-20
-            命中率的提升更多来自潜力分对头部候选的排序效果，而非模型整体判别力强。
-          </p>
-        )}
         <div className="mt-4">
           <h3 className="text-xs font-medium text-gray-400 mb-2">特征重要性（Top 8）</h3>
           <div className="space-y-1.5">
@@ -101,25 +85,15 @@ function Metric({
   label,
   value,
   highlight,
-  warn,
 }: {
   label: string;
   value: string;
   highlight?: boolean;
-  warn?: boolean;
 }) {
   return (
     <div className="text-center">
       <div className="text-[11px] text-gray-500">{label}</div>
-      <div
-        className={
-          warn
-            ? "text-lg font-semibold text-amber-300"
-            : highlight
-              ? "text-lg font-semibold text-glimmer-300"
-              : "text-lg font-semibold text-gray-200"
-        }
-      >
+      <div className={highlight ? "text-lg font-semibold text-glimmer-300" : "text-lg font-semibold text-gray-200"}>
         {value}
       </div>
     </div>
