@@ -140,7 +140,7 @@ export default function BacktestPage() {
           {potential_model.calibration && (
             <div>
               <h3 className="text-xs font-medium text-gray-400 mb-2">
-                Isotonic 校准曲线（校准集：未参与训练的独立频道，n={potential_model.calibration.n_calibration_rows}） · Conformal
+                Platt(sigmoid) 校准曲线（校准集：未参与训练的独立频道，n={potential_model.calibration.n_calibration_rows}） · Conformal
                 目标覆盖率 {(potential_model.calibration.target_coverage * 100).toFixed(0)}% · 实际覆盖率{" "}
                 {potential_model.calibration.actual_coverage !== null
                   ? `${(potential_model.calibration.actual_coverage * 100).toFixed(1)}%`

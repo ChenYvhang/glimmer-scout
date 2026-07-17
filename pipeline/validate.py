@@ -303,7 +303,7 @@ def plot_calibration_curve(calibration_curve: list[dict], out_path: Path) -> Non
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.legend(fontsize=8)
-    ax.set_title("Isotonic 校准曲线（auxiliary_holdout）")
+    ax.set_title("Platt(sigmoid) 校准曲线（auxiliary_holdout）")
     fig.tight_layout()
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
@@ -399,7 +399,10 @@ def write_backtest_markdown(scores: dict, season_leak: dict, groupkfold: dict, l
         "- **GroupKFold而非普通KFold**：同一频道的5个滑动T窗口高度相关（都基于同一份历史视频），"
         "普通KFold会让同一频道的不同窗口分散在训练/验证两侧，CV分数虚高且不报错。",
         "- **排序头与概率头分工**：Top-K榜单用LGBMRanker(lambdarank)的排序分，因为业务只关心榜单头部相对顺序；"
-        "\"引爆概率\"数值用LGBMRegressor回归log(post/pre)后isotonic校准，因为概率数值需要良定义的[0,1]区间且要有校准保证。",
+        "\"引爆概率\"数值用LGBMRegressor回归log(post/pre)后做Platt(sigmoid)校准，因为概率数值需要良定义的[0,1]区间"
+        "且要有校准保证——原计划用isotonic regression，但校准集只有约90行、正样本个位数，isotonic拟合出的阶梯函数"
+        "只有4级平台，套到2000+频道上会让92%的频道挤在3个数值上（散点图上就是密集竖线），"
+        "改用参数更少的Platt scaling后输出连续、不再阶梯化。",
         "- **Conformal区间**：概率头给出的p_lo/p_hi来自auxiliary_holdout残差分位数，"
         "\"高分但区间宽\"和\"高分且区间窄\"是两种不同的决策置信度，前端应区别对待。",
         "",

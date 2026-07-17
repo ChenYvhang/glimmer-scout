@@ -10,7 +10,7 @@ from the original single-classifier design and why:
 - A random 15% of channels ("auxiliary_holdout", stratified by subscriber
   tier) never enters training or the eval snapshot. It carries three jobs
   that all boil down to "needs data that hasn't been used for training or
-  scoring": (a) leak-free season coefficient estimation, (b) isotonic
+  scoring": (a) leak-free season coefficient estimation, (b) Platt/sigmoid
   calibration of the regression head, (c) conformal residual quantiles.
   Splitting these into three separate holdouts would fragment an already
   small channel pool for no added rigor — all three only require
@@ -49,7 +49,7 @@ import lightgbm as lgb
 import numpy as np
 import yaml
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.isotonic import IsotonicRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 from sklearn.metrics import accuracy_score, brier_score_loss
 
@@ -527,12 +527,25 @@ def train_dual_head_oof(training_rows: list[dict], eval_rows: list[dict],
 
 def calibrate_and_conformalize(reg_model: lgb.LGBMRegressor, aux_holdout: list[dict], fetched_at: datetime,
                                 season_coefs: dict, label_fn, conformal_alpha: float = CONFORMAL_ALPHA) -> dict:
-    """§4.2 isotonic calibration + §5 conformal interval, both fit on
+    """§4.2 probability calibration + §5 conformal interval, both fit on
     auxiliary_holdout's own eval-snapshot rows (T=60d) — data the production
-    regressor never trained on. Returns the fitted isotonic model plus the
-    conformal residual quantile, and reports actual coverage on this same
-    holdout (the honest self-check the spec asks for: it SHOULD be close to
-    the nominal 1-alpha, not exactly, since this is a finite calibration set)."""
+    regressor never trained on.
+
+    Uses Platt/sigmoid scaling (1-D logistic regression on the raw regressor
+    score), not isotonic regression. Isotonic was the original design (see
+    REFACTOR_PLAN.md §4.2) but with only ~90 calibration rows and ~6 positives
+    it collapsed to 4 output plateaus (0%/3.2%/9.1%/100%) — confirmed by
+    inspecting IsotonicRegression's y_thresholds_ directly. Applied to 2000+
+    channels that meant ~92% of them landed on just 3 of those 4 values,
+    showing up as dense vertical stripes on the P-vs-R scatter plot. Platt
+    scaling fits a smooth 2-parameter sigmoid instead of a step function, so
+    it doesn't need nearly as many calibration points to stay continuous —
+    the standard reason isotonic is usually reserved for larger calibration
+    sets. Reports the same Brier/coverage diagnostics either way.
+
+    Returns the fitted calibrator plus the conformal residual quantile, and
+    actual coverage on this same holdout (should sit close to the nominal
+    1-alpha, not exactly, since this is a finite calibration set)."""
     aux_eval_rows = build_eval_rows(aux_holdout, fetched_at, season_coefs)
     labeled = [(r, label_continuous(r)) for r in aux_eval_rows]
     labeled = [(r, y) for r, y in labeled if y is not None]
@@ -544,9 +557,9 @@ def calibrate_and_conformalize(reg_model: lgb.LGBMRegressor, aux_holdout: list[d
     y_true_binary = np.array([label_fn(r) for r, _ in labeled], dtype=int)
     raw_pred = reg_model.predict(X)
 
-    isotonic = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0)
-    isotonic.fit(raw_pred, y_true_binary)
-    calibrated_prob = isotonic.predict(raw_pred)
+    calibrator = LogisticRegression()
+    calibrator.fit(raw_pred.reshape(-1, 1), y_true_binary)
+    calibrated_prob = calibrator.predict_proba(raw_pred.reshape(-1, 1))[:, 1]
 
     brier = brier_score_loss(y_true_binary, calibrated_prob)
     calibration_curve = _calibration_bins(calibrated_prob, y_true_binary, n_bins=10)
@@ -563,7 +576,7 @@ def calibrate_and_conformalize(reg_model: lgb.LGBMRegressor, aux_holdout: list[d
         len(labeled), brier, conformal_quantile, 1 - conformal_alpha, actual_coverage,
     )
     return {
-        "isotonic": isotonic,
+        "calibrator": calibrator,
         "conformal_quantile": conformal_quantile,
         "brier_score": brier,
         "calibration_curve": calibration_curve,
@@ -571,6 +584,10 @@ def calibrate_and_conformalize(reg_model: lgb.LGBMRegressor, aux_holdout: list[d
         "actual_coverage": actual_coverage,
         "n_calibration_rows": len(labeled),
     }
+
+
+def _predict_calibrated(calibrator: LogisticRegression, raw_values: np.ndarray) -> np.ndarray:
+    return calibrator.predict_proba(raw_values.reshape(-1, 1))[:, 1]
 
 
 def topk_hit_rate(rows_with_score: list[tuple[dict, float]], label_fn, k: int) -> tuple[float, int]:
@@ -747,7 +764,7 @@ def run() -> dict:
         final_regressor = train_regressor(training_rows)
         calib = calibrate_and_conformalize(final_regressor, aux_holdout, fetched_at, season_coefs, label_fn)
         potential_meta["calibration"] = {
-            k: v for k, v in calib.items() if k != "isotonic"  # isotonic model itself isn't JSON-serializable
+            k: v for k, v in calib.items() if k != "calibrator"  # sklearn model itself isn't JSON-serializable
         }
 
         for ch in channels:
@@ -755,9 +772,9 @@ def run() -> dict:
             feats_arr = np.array([feats])
             rank_score = float(final_ranker.predict(feats_arr)[0])
             raw_reg = float(final_regressor.predict(feats_arr)[0])
-            p = float(calib["isotonic"].predict(np.array([raw_reg]))[0])
-            p_lo = float(calib["isotonic"].predict(np.array([raw_reg - calib["conformal_quantile"]]))[0])
-            p_hi = float(calib["isotonic"].predict(np.array([raw_reg + calib["conformal_quantile"]]))[0])
+            p = float(_predict_calibrated(calib["calibrator"], np.array([raw_reg]))[0])
+            p_lo = float(_predict_calibrated(calib["calibrator"], np.array([raw_reg - calib["conformal_quantile"]]))[0])
+            p_hi = float(_predict_calibrated(calib["calibrator"], np.array([raw_reg + calib["conformal_quantile"]]))[0])
             potential_scores[ch["channel_id"]] = {
                 "value": p * 100,               # calibrated acceleration probability, 0-100 (kept as `value` for
                                                   # backward compatibility with the field the frontend already reads)
