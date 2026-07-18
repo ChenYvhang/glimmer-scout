@@ -95,6 +95,13 @@ export interface FeatureImportance {
   method: string; // human-readable caveat about what this is (and isn't)
 }
 
+export interface PermutationImportance {
+  ranker: FeatureImportanceEntry[];
+  regressor: FeatureImportanceEntry[];
+  method: string;
+  n_eval_rows: number;
+}
+
 export interface PotentialModel {
   method: "dual_head_gbdt" | "heuristic";
   training_sample_count: number;
@@ -103,6 +110,7 @@ export interface PotentialModel {
   grade_cuts: number[] | null;
   calibration: Calibration | null;
   feature_importance: FeatureImportance | null;
+  permutation_importance: PermutationImportance | null;
 }
 
 export interface TopKResult {
@@ -246,11 +254,41 @@ export interface CreatorDecision {
   localization_notes: string;
 }
 
+export interface ScriptEvidence {
+  video_title: string;
+  vision_evidence_quote: string;
+  top_feature_breakdown_dim: string;
+}
+
+export interface CreatorScript {
+  platform: "tiktok_vertical" | "youtube_horizontal";
+  language: "zh" | "en";
+  hook: string;
+  storyboard_beats: string[];
+  voiceover_points: string[];
+  caption_copy: string;
+  cta_placement: string;
+  referenced_evidence: ScriptEvidence;
+  model: string;
+}
+
+export type CreatorMarket =
+  | "north_america_europe"
+  | "greater_china"
+  | "japan"
+  | "korea"
+  | "other"
+  | "unknown";
+
+export type CreatorLanguage = "en" | "zh" | "ja" | "ko" | "unknown";
+
 export interface Creator {
   channel_id: string;
   channel_url: string;
   title: string;
   country: string | null;
+  market: CreatorMarket;
+  language: CreatorLanguage;
   subscriber_count: number;
   view_count_total: number;
   video_count_total: number;
@@ -262,6 +300,7 @@ export interface Creator {
   vision: CreatorVision | null;
   scores: CreatorScores;
   decision: CreatorDecision | null;
+  scripts: CreatorScript[] | null;
 }
 
 export interface ChannelSplit {

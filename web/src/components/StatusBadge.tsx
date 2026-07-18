@@ -4,7 +4,7 @@ import type { ArchitectureLayerStatus } from "../lib/schema";
 const STYLES: Record<ArchitectureLayerStatus, string> = {
   live: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   live_with_caveat: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  pending: "bg-gray-500/15 text-gray-400 border-gray-500/30",
+  pending: "bg-gray-500/15 text-ink-400 border-gray-500/30",
 };
 
 const LABELS: Record<ArchitectureLayerStatus, string> = {

@@ -415,3 +415,215 @@ PLAN执行清单已全部勾选。
    `npm run dev` 实机看一遍四个页面。
 若用户说"继续"，默认应先询问是否要扩大vision/decide覆盖率（涉及真实费用），
 而不是默认帮忙执行。
+
+---
+
+## 8. 裂变层扩展 + 回流层 + 前端改造（2026-07-18 立项）
+
+> 状态：**规划中，未动代码**。本节写完即停，等确认后再按§8.7顺序执行。
+
+### 8.0 现状基线更正（§7执行清单已过期，以此为准）
+
+§7 执行清单冻结在 351/518 频道、278 GBDT 样本的状态。REFACTOR_PLAN.md 之后又跑了一轮
+扩量，**当前 `web/public/dataset.json` 的真实状态**是：`meta.channel_count=2083`、
+`vision_coverage`/`decision_coverage`=351/2083、`gbdt_sample_count=2650`、
+`potential_model.method="dual_head_gbdt"`（排序头 LGBMRanker + 概率头 LGBMRegressor，
+Platt/sigmoid 校准，非 isotonic）、conformal 区间字段是 `value_lo`/`value_hi`（非 p_lo/p_hi，
+那是 score.py 内部命名）。以下方案按这个真实基线设计。schema 权威来源是
+`web/src/lib/schema.ts`（已用真实 dataset.json 核对过），不是本文件§3的示意 schema。
+
+### 8.1 开放决策点（按本项目惯例：先说我的理解并按此执行，不对请指正）
+
+1. **market/language 字段目前不存在。** `creators[]` 只有 `country`（YouTube API
+   `snippet.country`，大量为 `null`）和 `vertical`（运动品类，非地域）。方案：
+   在 `build.py` 里新增一张 country→{market, language} 的静态映射表（`US/CA/GB/AU`→
+   `north_america_europe`/`en`，`CN/TW/HK`→`greater_china`/`zh`，`JP`→`japan`/`ja`，
+   `KR`→`korea`/`ko`，其余已知国家归 `other`，`country=null` 时两个字段都设为
+   `"unknown"`），写入每个 creator 的 `market`/`language` 字段，供左栏"市场筛选"用。
+   **但脚本生成不看这个字段来决定要不要生成——`language=unknown` 的频道占比可能很高，
+   卡在这里会让裂变脚本大量开天窗。** 所以裂变脚本固定"中英各一版"（下述8.2），
+   `market`/`language` 字段只做筛选展示用，如实标注"unknown"而不是瞎猜。
+2. **`scripts` 是新字段，不是替换 `decide.py` 现有的 `decision.creative_variants`。**
+   现有 `creative_variants`（`variant_name/script_direction/subtitle_highlights/
+   target_platform_note/target_market`）已经跑过 Top 60，继续保留、不动。新的
+   `creators[].scripts`（本节§8.4）只离线预生成 Top 20（Top 60 里排名前 20，复用
+   `decide.py::build_candidates` 已有的 `combined_score` 排序，不新写排序逻辑），
+   每人 4 条完整脚本，比 `creative_variants` 重得多。抽屉裂变 tab 优先渲染
+   `scripts`（有则展示完整脚本卡片），没有则退回展示 `creative_variants`（轻量版），
+   两种状态都要在 UI 上诚实标注（"完整脚本" vs "脚本方向"角标），不能混着看不出区别。
+3. **预算占用是纯前端概念，不是新数据字段。** `products.yaml` 没有 budget，
+   `decide.py` 的 `price_range`（min/max，基于订阅数的启发式定价，已在代码注释里
+   写明不是真实报价单）已经是唯一的"钱"相关字段。右栏"预算占用"= 候选池里所有
+   creator 的 `price_range` 求和，除以用户自己在 UI 里填的预算上限（存
+   localStorage，见§8.5），没填就诚实显示"预算上限未设置"，不编造默认值。
+4. **`potential_model.permutation_importance` 现在不存在，需要真的新写 `score.py` 代码，
+   不只是前端活。** 现有 `feature_importance`（gain-based）在 `score.py:518-520`
+   明确写了"这不是 permutation importance"。要做真的 permutation importance 需要
+   `sklearn.inspection.permutation_importance` 跑在 held-out eval rows 上（ranker/
+   regressor 各一份），写入新字段 `potential_model.permutation_importance =
+   {ranker:[...], regressor:[...], method, n_eval_rows}`。这个改动纳入本节§8.2
+   的 pipeline 改动清单，算裂变/回流层改造的一部分（不是单独立项）。
+5. **品牌色：已实测，不是凭记忆写。** 直接抓取 `insta360.com` 页面发现真实使用的
+   品牌强调色 **`#FF8B26`**（用于首页倒计时高亮文案 `color: #FF8B26`，抓取自
+   2026-07-18 的实时页面源码），替换掉现有 `index.css` 里凭空定的
+   `--color-glimmer-300/400/500`（`#eda100/#c98500/#a86e00`，当初是我瞎编的）。
+   新方案只保留**一个**强调色变量 `--color-accent: #FF8B26`，取消三档深浅（3.3节
+   要求"单强调色"），深浅需要时用 opacity 而不是三个不同色号。
+6. **详情抽屉从现有 5 段重组为 7 段。** 现有 `CreatorDrawer.tsx` 是
+   `①基础信息 ②动能特征 ③视觉理解 ④匹配分 ⑤决策卡` 五段一栏滚动。新方案按
+   3.7节的"数据/理解/预测/匹配/决策/裂变/回流"重组：①②不变（改名"数据层"
+   "理解层"），③预测层=旧②的速度双曲线图 **+ 新增 permutation importance 横条图
+   + 引爆概率/conformal区间可视化**（`value`/`value_lo`/`value_hi`，现在只是文字，
+   要做成区间图），④匹配层=旧④的 `feature_breakdown` 条形图 **+ 新增
+   `contributions`（8维cosine分维）横条图**（现有 dataset 已有这个字段，只是没渲染），
+   ⑤决策层=旧⑤去掉 creative_variants 展示（挪到裂变tab），⑥裂变 tab=新的
+   platform×language 切换 + `scripts`/`creative_variants` 降级展示，⑦回流层=
+   新增结果录入表单。
+   连带地：这次改造让"复盘层"从 `architecture_layers` 里的 `pending` 升级为
+   `live_with_caveat`——本地结果记录 + 真实 permutation/cosine 归因是真的，
+   但广告转化数据/ROI归因依然没有，说明文字要写清楚这个边界，不能笼统说"已上线"。
+
+### 8.2 改动清单
+
+**pipeline（Python）**
+| 文件 | 改动 |
+|---|---|
+| `score.py` | 新增 `compute_permutation_importance()`：对 ranker/regressor 各跑一次 `sklearn.inspection.permutation_importance`（eval_rows 上，非训练集），写入 `potential_model.permutation_importance` |
+| `build.py` | 新增 country→market/language 映射表 + 派生逻辑；合并 `cache/scripts/*.json` 到 `creators[].scripts`；`ARCHITECTURE_LAYERS` 里"复盘层"状态改为 `live_with_caveat` 并更新说明文案 |
+| `pipeline/scripts.py`（新文件，Stage5b） | 读 `cache/decisions/*.json` 取 Top 20（按 `combined_score`），对每人的 `recommended_product` 生成 4 变体（TikTok竖版15-30s / YouTube横版60-90s ×中/英），prompt 注入真实视频标题、`vision.content_vector`/`vision.evidence`、`resonance.feature_breakdown` 最高分卖点，要求 DeepSeek 输出显式引用；每变体含 `hook/storyboard_beats/voiceover_points/caption_copy/cta_placement`；缓存 `cache/scripts/{channelId}_{productId}_{platform}_{lang}.json`；`ThreadPoolExecutor(max_workers=3)`，重试3次+退避（复用 `vision.py` 的 `RETRY_BACKOFF_SECONDS` 模式）；CLI `python -m pipeline.scripts --top-n 20` |
+
+**frontend（web/src）**
+| 文件 | 改动 |
+|---|---|
+| `lib/outcomeStore.ts`（新） | localStorage 读写 `outcome:{channelId}:{productId}`，`getFlywheelCount()`，写入后 `dispatchEvent(new CustomEvent("outcome:changed"))` |
+| `lib/candidatePool.ts`（新） | localStorage 读写 `candidatePool`（channelId 数组），供框选批量加入 |
+| `lib/keyboardShortcuts.ts`（新） | `/` 聚焦搜索、`Esc` 关抽屉、方向键移动榜单的 hook |
+| `components/FlywheelCounter.tsx`（新） | 顶栏角标 + 系统状态页复用，监听 `outcome:changed` |
+| `components/ScatterMatrix.tsx`（新，从 MatrixPage 拆出并重写） | 真实缩略图 `<image>`+`clipPath circle` 替换现有 Recharts 彩色 `<Cell>` 圆点；四象限高亮；框选批量加入候选池 |
+| `components/FilterPanel.tsx`（新） | 左栏：垂类/市场/平台/粉丝量级/风险，下拉+标签 |
+| `components/CandidatePoolPanel.tsx`（新） | 右栏：已选达人、预算占用（§8.1第3点）、市场覆盖、垂类分布 |
+| `components/CompareModal.tsx`（新） | 最多3人对比：雷达图叠加 + 双分对比 + 共振明细 |
+| `pages/CreatorDrawer.tsx`（重构） | 5段→7段（§8.1第6点），新增裂变tab与回流层表单 |
+| `pages/SystemStatusPage.tsx`（改） | 新增飞轮计数、时序Transformer⏳待接入行、permutation importance 图表 |
+| `App.tsx`（改） | 三栏布局骨架、顶栏（单品切换/市场筛选/全局搜索/飞轮计数） |
+| `index.css`（改） | 品牌色替换为 `#FF8B26`（§8.1第5点）；字体栈 `Inter, "Noto Sans SC", system-ui, sans-serif`（需在 `index.html` 加 Google Fonts `<link>`，Inter+Noto Sans SC 都要，当前是纯 system-ui 没有自定义字体）；字号层级 32/20/14/12，字重700/500/400，颜色 `#E8E8E8/#999/#666`，数字 `font-variant-numeric: tabular-nums` |
+| `package.json` | 新增依赖 `lucide-react` |
+
+### 8.3 组件树（改造后）
+
+```
+App.tsx（三栏骨架 + 顶栏）
+├─ Header（单品切换 · 市场筛选 · 全局搜索 · FlywheelCounter）
+├─ Routes
+│  ├─ "/"  MatrixPage
+│  │  ├─ FilterPanel（左）
+│  │  ├─ ScatterMatrix（中，散点/列表切换）
+│  │  ├─ CandidatePoolPanel（右）
+│  │  ├─ CompareModal（勾选≤3人时弹出）
+│  │  └─ CreatorDrawer（抽屉，点击散点/列表行打开）
+│  │     ├─ ①数据层  ②理解层  ③预测层（含新permutation importance图 + conformal区间图）
+│  │     ├─ ④匹配层（feature_breakdown + 新contributions图）
+│  │     ├─ ⑤决策层
+│  │     ├─ ⑥裂变tab（platform×language切换，scripts优先/creative_variants降级）
+│  │     └─ ⑦回流层（结果录入表单）
+│  ├─ "/backtest"  BacktestPage（不变，已有 tier表/K值扫描/校准图）
+│  └─ "/status"  SystemStatusPage（+飞轮计数 +时序Transformer待接入 +permutation importance图）
+└─ lib/{outcomeStore,candidatePool,keyboardShortcuts}.ts
+```
+
+### 8.4 dataset.json 新增/变更字段
+
+```
+creators[].market              string   // "greater_china"|"japan"|"korea"|"north_america_europe"|"other"|"unknown"
+creators[].language             string   // "zh"|"en"|"ja"|"ko"|"unknown"，源自 country，country=null时unknown
+creators[].scripts               array | null  // 仅Top 20有值，null=未生成（前端显示"待生成"，不是空数组硬撑）
+  [].platform                    string   // "tiktok_vertical" | "youtube_horizontal"
+  [].language                    string   // "zh" | "en"
+  [].hook                        string   // 前3秒钩子
+  [].storyboard_beats            string[] // 分镜要点
+  [].voiceover_points             string[] // 口播要点
+  [].caption_copy                string   // 字幕文案
+  [].cta_placement               string   // CTA落点
+  [].referenced_evidence          object   // {video_title, vision_evidence_quote, top_feature_breakdown_dim} — 验收用，人工核对"换个达人不成立"
+potential_model.permutation_importance   object | null  // null=样本不足未计算
+  .ranker                         [{feature, importance}]
+  .regressor                      [{feature, importance}]
+  .method                          string   // 说明这是真permutation importance，区别于原有feature_importance
+  .n_eval_rows                    number
+meta.architecture_layers[3]（复盘层）.status   "pending" → "live_with_caveat"
+meta.architecture_layers[3].note               更新为区分"结果记录+模型归因已真实上线"vs"转化/ROI归因仍待接入"
+```
+现有字段不变：`decision.creative_variants`、`scores.resonance.contributions`（已存在但前端未渲染，本次补渲染，不是新字段）、`scores.potential.value_lo/value_hi`（已存在，本次补可视化）。
+
+### 8.5 localStorage schema
+
+```
+outcome:{channelId}:{productId}   →  {
+  actualViews: number,
+  engagementRate: number,      // 0-1
+  ignited: boolean,             // 是否引爆
+  note: string,
+  updatedAt: string             // ISO8601
+}
+candidatePool                     →  string[]              // channelId 数组，去重
+campaign:budgetCap                →  number | undefined     // 用户自填预算上限，未设置则不存在这个key
+```
+事件：写入 `outcome:*` 后 `window.dispatchEvent(new CustomEvent("outcome:changed"))`，
+`FlywheelCounter`/`SystemStatusPage` 监听此事件 + mount时读一次（不能只依赖浏览器原生
+`storage` 事件，因为同一标签页内 localStorage 变更不会触发它）。
+
+### 8.6 验收方式（对应"验收：脚本换个达人不成立"）
+
+`pipeline/scripts.py` 跑完 Top 20 后，人工抽查：换一个达人的 `hook`/`storyboard_beats`
+是否读起来像换皮模板。执行顺序§8.7第5步会先只跑3个达人，停下来给你看，你确认"确实
+不是模板"了再跑剩下17个，不做自动化相似度判分兜底这个验收（本质是主观判断，assert
+一个相似度阈值反而可能掩盖"读起来像模板但字面不重复"的情况）。
+
+### 8.7 执行顺序（对齐你给的0-8步，标注每步产出与停顿点）
+
+0. ✅ 本节 PLAN.md 更新——**现在就停，等你确认**
+1. `ScatterMatrix.tsx` 缩略图化（真实图替换彩色圆点）→ 停下看
+2. 三栏布局骨架（`App.tsx`+`FilterPanel`+`CandidatePoolPanel`，先搭架子不接数据逻辑）
+3. `index.css` 字体层级 + 颜色收敛（`#FF8B26`单强调色）
+4. 回流层：`outcomeStore.ts`/`candidatePool.ts` + `FlywheelCounter` + 抽屉回流表单 +
+   `score.py` 真permutation importance + 前端图表
+5. `pipeline/scripts.py` 裂变扩展 → 先跑3个达人 → **停下看**（§8.6验收）→ 确认后跑满Top20
+6. 抽屉裂变tab（platform×language切换，消费`scripts`/降级`creative_variants`）
+7. 对比模式 + 键盘快捷键
+8. 系统状态页收尾（时序Transformer待接入行、permutation importance图、复盘层文案更新）
+
+**不做**（对齐3.8）：Hero/CTA/使用场景卡片/锚点导航、ROI看板/漏斗图/预算模拟器（§8.1
+第3点已把"预算占用"限定为候选池求和展示，不是模拟器）、移动端适配、深色模式切换、
+WCAG/aria全覆盖、假loading动画（真实fetch的loading保留，如`useDataset.ts`现有逻辑）。
+
+### 8.8 执行状态（2026-07-18，实机截图+浏览器实测验证）
+
+- [x] 步骤0 PLAN.md（本节）
+- [x] 步骤1 `ScatterMatrix.tsx` 缩略图化 — X/Y轴按方案换成R/P、四象限高亮、悬停放大+浮层、真实缩略图
+- [x] 步骤2 三栏布局 — `build.py`新增`market`/`language`（真实country派生，已重跑`python -m pipeline.build`）、
+      `FilterPanel`/`CandidatePoolPanel`/`candidatePool.ts`、散点框选批量加入候选池
+- [x] 步骤3 颜色收敛+字体层级 — 单强调色`#FF8B26`（真实抓取插入360品牌色，替换臆造的glimmer-300/400/500）、
+      Inter+Noto Sans SC、32/20/14/12层级；微光效果（twinkle/glimmer-aura/glimmer-particles/glimmer-text）
+      原样保留，只换了色相
+- [x] 步骤4 回流层 — `score.py`新增`compute_permutation_importance()`（sklearn，aux_holdout留出集真实扰动测试，
+      已重跑`python -m pipeline.score`+`build.py`）、conformal区间可视化、cosine `contributions`横条图、
+      `outcomeStore.ts`结果录入表单、`FlywheelCounter`顶栏+状态页联动、`meta.architecture_layers`复盘层
+      状态改为`live_with_caveat`
+- [x] 步骤5 `pipeline/scripts.py` 裂变扩展 — **20/20 达人全部真实调用DeepSeek完成**（先3个验证通过后，
+      2026-07-18 补跑剩余17个，17/17成功，个别因JSON字段缺失触发过1-2次内部重试后成功，无最终失败）。
+      `cache/scripts/` 共80个文件（20人 × 4变体），已重新执行`python -m pipeline.build`合并进
+      `creators[].scripts`，dataset.json校验20/20完整。
+- [x] 步骤6 抽屉裂变tab — `ScriptsPanel`：platform×language切换、`scripts`优先/`creative_variants`降级、
+      一键复制/导出；决策卡区块不再重复渲染creative_variants
+- [x] 步骤7 对比模式+键盘快捷键 — 榜单勾选≤3人、`CompareModal`（8维雷达图叠加+双分对比+共振明细表）、
+      `/`聚焦搜索、`↑↓`+`Enter`移动打开、`Esc`关闭
+- [x] 步骤8 系统状态页收尾 — 已随步骤4一并完成（时序Transformer待接入卡片、permutation importance图表
+      已加到`BacktestPage.tsx`、页脚"Catch the glimmer before dawn."、飞轮计数）
+- [x] 顺带补的两处3.6遗漏：全局搜索扩展到匹配垂类/`vision.sport_types`（原来只搜标题）、
+      可关闭的键盘快捷键onboarding提示条（localStorage记忆已关闭，不是弹窗）
+
+全程 `tsc -b && vite build` 保持通过，每一步都用 Playwright 起无头浏览器实机截图verify过（dev server
+一直未连接Claude浏览器扩展，走的是本地Playwright+chromium方案），均无console报错。
+
+下次继续时：先问是否要补跑`pipeline/scripts.py`剩余17个达人（真实API费用），跑完记得重新
+`python -m pipeline.build`。

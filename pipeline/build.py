@@ -29,6 +29,7 @@ QUOTA_LOG_PATH = ARTIFACTS_DIR / "quota_log.json"
 VALIDATE_REPORT_PATH = ARTIFACTS_DIR / "validate_report.json"
 VISION_CACHE_DIR = ROOT / "cache" / "vision"
 DECISIONS_CACHE_DIR = ROOT / "cache" / "decisions"
+SCRIPTS_CACHE_DIR = ROOT / "cache" / "scripts"
 PRODUCTS_PATH = ROOT / "config" / "products.yaml"
 DATASET_OUT_PATH = ROOT.parent / "web" / "public" / "dataset.json"
 
@@ -40,6 +41,36 @@ VIDEO_FIELDS = [
     "relative_velocity", "season_adjusted_velocity",
 ]
 
+# Country -> (market, language), derived from the real YouTube API `country`
+# field (frequently null — the API doesn't require channels to set it). This
+# is a coarse, honestly-labeled grouping for filtering/display only: it is
+# NOT used to gate script generation (pipeline/scripts.py always produces
+# both zh and en variants regardless of this field — see PLAN.md §8.1.1).
+# Known country not in this table -> market "other", language "unknown"
+# (we know the country but not the primary language). country=null -> both
+# "unknown". Never guessed/fabricated beyond what the country code implies.
+MARKET_LANGUAGE_BY_COUNTRY = {
+    "US": ("north_america_europe", "en"), "CA": ("north_america_europe", "en"),
+    "GB": ("north_america_europe", "en"), "AU": ("north_america_europe", "en"),
+    "NZ": ("north_america_europe", "en"), "IE": ("north_america_europe", "en"),
+    "DE": ("north_america_europe", "en"), "FR": ("north_america_europe", "en"),
+    "ES": ("north_america_europe", "en"), "IT": ("north_america_europe", "en"),
+    "NL": ("north_america_europe", "en"), "SE": ("north_america_europe", "en"),
+    "NO": ("north_america_europe", "en"), "CN": ("greater_china", "zh"),
+    "TW": ("greater_china", "zh"), "HK": ("greater_china", "zh"),
+    "MO": ("greater_china", "zh"), "JP": ("japan", "ja"), "KR": ("korea", "ko"),
+    "SG": ("other", "en"), "MY": ("other", "en"), "PH": ("other", "en"),
+    "IN": ("other", "en"), "ID": ("other", "en"), "BR": ("other", "en"),
+    "MX": ("other", "en"),
+}
+
+
+def derive_market_language(country: str | None) -> tuple[str, str]:
+    if not country:
+        return "unknown", "unknown"
+    return MARKET_LANGUAGE_BY_COUNTRY.get(country, ("other", "unknown"))
+
+
 ARCHITECTURE_LAYERS = [
     {"layer": "数据层", "status": "live",
      "note": "YouTube真实采集+特征工程，年龄偏差已验证消除（中位数漂移斜率0.002 < 0.05阈值）"},
@@ -47,8 +78,9 @@ ARCHITECTURE_LAYERS = [
      "note": "GBDT潜力分+cosine共振分，非黑箱预训练神经网络——demo规模无真实人货匹配监督标签，无法真训练该类模型"},
     {"layer": "裂变层", "status": "live",
      "note": "DeepSeek真实生成本地化脚本变体/字幕要点，非模板"},
-    {"layer": "复盘层", "status": "pending",
-     "note": "待接入：demo没有真实广告投放/转化数据，无法做真实因果归因，不伪造看板"},
+    {"layer": "复盘层", "status": "live_with_caveat",
+     "note": "结果录入（前端localStorage）+ 模型归因（真实permutation importance + cosine分维贡献）已上线；"
+             "广告投放/转化数据、ROI归因仍待接入——demo没有真实转化数据，不伪造因果看板"},
 ]
 
 
@@ -64,6 +96,21 @@ def load_decisions_cache() -> dict:
     return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in DECISIONS_CACHE_DIR.glob("*.json")}
 
 
+def load_scripts_for(channel_id: str, product_id: str) -> list[dict] | None:
+    """pipeline/scripts.py writes one file per (channel, product, platform,
+    language): {channel_id}_{product_id}_{platform}_{language}.json. Glob by
+    the exact channel_id/product_id prefix rather than splitting the filename
+    on "_" — both channel IDs (YouTube's base64url alphabet includes "_") and
+    product IDs (e.g. "ace_pro2") can themselves contain underscores, so
+    positional parsing would silently misattribute variants."""
+    if not SCRIPTS_CACHE_DIR.exists():
+        return None
+    matches = sorted(SCRIPTS_CACHE_DIR.glob(f"{channel_id}_{product_id}_*.json"))
+    if not matches:
+        return None
+    return [json.loads(p.read_text(encoding="utf-8")) for p in matches]
+
+
 def load_products() -> list[dict]:
     with open(PRODUCTS_PATH, encoding="utf-8") as f:
         return yaml.safe_load(f)["products"]
@@ -75,12 +122,15 @@ def build_creator(channel: dict, score_entry: dict | None, vision: dict | None, 
 
     potential = score_entry.get("potential") if score_entry else None
     resonance = score_entry.get("resonance") if score_entry else None
+    market, language = derive_market_language(channel.get("country"))
 
     return {
         "channel_id": channel["channel_id"],
         "channel_url": f"https://www.youtube.com/channel/{channel['channel_id']}",
         "title": channel.get("title"),
         "country": channel.get("country"),
+        "market": market,
+        "language": language,
         "subscriber_count": channel.get("subscriber_count"),
         "view_count_total": channel.get("view_count_total"),
         "video_count_total": channel.get("video_count_total"),
@@ -98,6 +148,10 @@ def build_creator(channel: dict, score_entry: dict | None, vision: dict | None, 
             "resonance": resonance,  # dict of product_id -> {value, contributions, feature_breakdown}, or None
         },
         "decision": decision,  # None if not in the pre-generated set — frontend must render "未生成"
+        # Full scripts only exist for the Top-20 (pipeline/scripts.py); None
+        # here means "not generated yet", not "no script exists" — frontend
+        # falls back to decision.creative_variants when this is null.
+        "scripts": load_scripts_for(channel["channel_id"], decision["recommended_product"]) if decision else None,
     }
 
 
@@ -166,6 +220,7 @@ def run() -> dict:
             "grade_cuts": potential_meta["grade_cuts"],
             "calibration": potential_meta["calibration"],
             "feature_importance": potential_meta["feature_importance"],
+            "permutation_importance": potential_meta.get("permutation_importance"),
         } if potential_meta else None,
         # Stratified Top-K backtest (REFACTOR_PLAN.md §1.4): "global" + one
         # entry per subscriber tier, each with baseline/model hit-rate and

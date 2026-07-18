@@ -1,13 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  /* "微光" brand accent — validated against --color-signal-400 for dark-surface
-     categorical use (CVD deltaE, contrast, lightness band) via the dataviz skill's
-     validator; do not swap the hex without re-running it. */
-  --color-glimmer-300: #eda100;
-  --color-glimmer-400: #c98500;
-  --color-glimmer-500: #a86e00;
-  --color-signal-400: #0284c7;
+  --font-sans: "Inter", "Noto Sans SC", system-ui, sans-serif;
+
+  /* Single accent — real Insta360 brand color, scraped from insta360.com
+     2026-07-18 (see PLAN.md §8.1.5), replacing the three invented
+     glimmer-300/400/500 shades. Only used for the 引爆候选 highlight and key
+     numbers (PLAN.md §3.3); everywhere else stays grayscale. Depth when
+     needed comes from opacity (accent/10, accent/25, ...), not new hexes. */
+  --color-accent: #ff8b26;
+
+  --color-ink-100: #e8e8e8;
+  --color-ink-400: #999999;
+  --color-ink-600: #666666;
 
   --animate-fade-in-up: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-twinkle: twinkle 3.2s ease-in-out infinite;
@@ -31,12 +36,12 @@
     0%, 100% {
       opacity: 0.85;
       transform: scale(1) rotate(0deg);
-      filter: drop-shadow(0 0 2px rgba(237, 161, 0, 0.5));
+      filter: drop-shadow(0 0 2px rgba(255, 139, 38, 0.5));
     }
     50% {
       opacity: 1;
       transform: scale(1.12) rotate(8deg);
-      filter: drop-shadow(0 0 8px rgba(237, 161, 0, 0.85));
+      filter: drop-shadow(0 0 8px rgba(255, 139, 38, 0.85));
     }
   }
   @keyframes drift {
@@ -94,13 +99,14 @@ html, body, #root {
 
 body {
   margin: 0;
-  font-family: system-ui, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans);
   background:
-    radial-gradient(900px 480px at 15% -10%, rgba(201, 133, 0, 0.10), transparent 60%),
-    radial-gradient(700px 420px at 100% 0%, rgba(2, 132, 199, 0.08), transparent 55%),
-    #0b0d12;
+    radial-gradient(900px 480px at 15% -10%, rgba(255, 139, 38, 0.09), transparent 60%),
+    radial-gradient(700px 420px at 100% 0%, rgba(2, 132, 199, 0.07), transparent 55%),
+    #09090c;
   background-attachment: fixed;
-  color: #e5e7eb;
+  color: var(--color-ink-100);
+  font-variant-numeric: tabular-nums;
 }
 
 ::-webkit-scrollbar {
@@ -123,8 +129,8 @@ body {
   height: 220%;
   pointer-events: none;
   background:
-    radial-gradient(480px 200px at 20% 0%, rgba(237, 161, 0, 0.16), transparent 70%),
-    radial-gradient(360px 180px at 85% 20%, rgba(2, 132, 199, 0.14), transparent 70%);
+    radial-gradient(480px 200px at 20% 0%, rgba(255, 139, 38, 0.15), transparent 70%),
+    radial-gradient(360px 180px at 85% 20%, rgba(2, 132, 199, 0.13), transparent 70%);
   animation: var(--animate-drift);
   will-change: transform;
 }
@@ -141,8 +147,8 @@ body {
   width: 3px;
   height: 3px;
   border-radius: 9999px;
-  background: #eda100;
-  box-shadow: 0 0 6px 1px rgba(237, 161, 0, 0.8);
+  background: #ff8b26;
+  box-shadow: 0 0 6px 1px rgba(255, 139, 38, 0.8);
   animation: var(--animate-rise);
   will-change: transform, opacity;
 }
@@ -154,7 +160,7 @@ body {
 .glimmer-particles span:nth-child(6) { left: 88%; --rise-drift: -6px; animation-delay: 2s;   animation-duration: 8.4s; }
 
 .glimmer-text {
-  background: linear-gradient(90deg, #eda100, #ffe28a, #eda100, #c98500, #eda100);
+  background: linear-gradient(90deg, #ff8b26, #ffd9a8, #ff8b26, #cc6f1a, #ff8b26);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;

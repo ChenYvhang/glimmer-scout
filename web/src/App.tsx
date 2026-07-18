@@ -4,6 +4,7 @@ import MatrixPage from "./pages/MatrixPage";
 import BacktestPage from "./pages/BacktestPage";
 import SystemStatusPage from "./pages/SystemStatusPage";
 import { useDataset } from "./lib/useDataset";
+import FlywheelCounter from "./components/FlywheelCounter";
 
 const NAV_ITEMS = [
   { to: "/", label: "引爆矩阵" },
@@ -12,7 +13,7 @@ const NAV_ITEMS = [
 ];
 
 function App() {
-  const { error } = useDataset();
+  const { data, error } = useDataset();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -22,7 +23,7 @@ function App() {
           <span /><span /><span /><span /><span /><span />
         </div>
         <div className="relative max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-8">
-          <span className="flex items-center gap-2 font-semibold text-lg tracking-tight text-white">
+          <span className="flex items-center gap-2 font-semibold text-lg tracking-tight text-ink-100">
             <svg width="18" height="18" viewBox="0 0 48 48" fill="none" className="shrink-0 animate-twinkle">
               <path
                 fill="url(#header-glimmer)"
@@ -30,13 +31,13 @@ function App() {
               />
               <defs>
                 <radialGradient id="header-glimmer" cx="50%" cy="42%" r="65%">
-                  <stop offset="0%" stopColor="#ffe28a" />
-                  <stop offset="55%" stopColor="#eda100" />
-                  <stop offset="100%" stopColor="#c98500" />
+                  <stop offset="0%" stopColor="#ffd9a8" />
+                  <stop offset="55%" stopColor="#ff8b26" />
+                  <stop offset="100%" stopColor="#cc6f1a" />
                 </radialGradient>
               </defs>
             </svg>
-            微光寻者 <span className="text-gray-600 font-normal text-sm">Glimmer Scout</span>
+            微光寻者 <span className="text-ink-600 font-normal text-sm">Glimmer Scout</span>
           </span>
           <span className="hidden md:inline-block text-xs tracking-wide border-l border-white/10 pl-4 glimmer-text font-medium">
             Catch Glimmer Before Dawn
@@ -51,8 +52,8 @@ function App() {
                   clsx(
                     "px-3 py-1.5 rounded-md text-sm transition-all duration-200",
                     isActive
-                      ? "bg-glimmer-500/15 text-glimmer-300 shadow-[0_0_12px_-2px_rgba(237,161,0,0.5)]"
-                      : "text-gray-400 hover:text-gray-200 hover:bg-white/5",
+                      ? "bg-accent/15 text-accent shadow-[0_0_12px_-2px_rgba(255,139,38,0.5)]"
+                      : "text-ink-400 hover:text-ink-100 hover:bg-white/5",
                   )
                 }
               >
@@ -60,6 +61,11 @@ function App() {
               </NavLink>
             ))}
           </nav>
+          {data && (
+            <div className="hidden lg:block border-l border-white/10 pl-4">
+              <FlywheelCounter channelCount={data.meta.channel_count} />
+            </div>
+          )}
         </div>
       </header>
 

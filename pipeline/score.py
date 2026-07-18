@@ -48,7 +48,9 @@ warnings.filterwarnings("ignore", message="Found 'eval_at' in params")
 import lightgbm as lgb
 import numpy as np
 import yaml
+from scipy.stats import spearmanr
 from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 from sklearn.metrics import accuracy_score, brier_score_loss
@@ -525,6 +527,60 @@ def train_dual_head_oof(training_rows: list[dict], eval_rows: list[dict],
     }
 
 
+def compute_permutation_importance(ranker: lgb.LGBMRanker, regressor: lgb.LGBMRegressor,
+                                    aux_holdout: list[dict], fetched_at: datetime, season_coefs: dict,
+                                    n_repeats: int = 20, random_state: int = RANDOM_SEED) -> dict | None:
+    """Real permutation importance (sklearn.inspection), as opposed to the
+    LightGBM training-time gain importance in train_dual_head_oof above.
+    Computed on auxiliary_holdout's eval-snapshot rows — the same independent
+    channels used for calibration/conformal (PLAN.md §8.1.4): shuffle one
+    feature column at a time on data neither head trained on, and measure how
+    much the score degrades. LGBMRanker has no continuous label to score MAE
+    against, so its scorer is the Spearman rank-correlation between predicted
+    scores and the continuous acceleration label; the regressor uses negative
+    MAE. Returns None if there aren't enough labeled holdout rows to trust it."""
+    aux_eval_rows = build_eval_rows(aux_holdout, fetched_at, season_coefs)
+    labeled = [(r, label_continuous(r)) for r in aux_eval_rows]
+    labeled = [(r, y) for r, y in labeled if y is not None]
+    if len(labeled) < 10:
+        logger.warning("aux eval rows too few (%d) for permutation importance — skipping", len(labeled))
+        return None
+
+    X = np.array([r["features"] for r, _ in labeled], dtype=float)
+    y = np.array([y for _, y in labeled], dtype=float)
+
+    def _rank_scorer(estimator, X_, y_) -> float:
+        preds = estimator.predict(X_)
+        corr, _ = spearmanr(preds, y_)
+        return 0.0 if np.isnan(corr) else float(corr)
+
+    def _table(importances_mean: np.ndarray) -> list[dict]:
+        clipped = np.clip(importances_mean, 0, None)
+        total = clipped.sum()
+        pct = (clipped / total * 100) if total > 0 else clipped
+        return sorted(
+            [{"feature": name, "importance": float(p)} for name, p in zip(FEATURE_NAMES, pct)],
+            key=lambda d: -d["importance"],
+        )
+
+    ranker_result = permutation_importance(
+        ranker, X, y, scoring=_rank_scorer, n_repeats=n_repeats, random_state=random_state,
+    )
+    regressor_result = permutation_importance(
+        regressor, X, y, scoring="neg_mean_absolute_error", n_repeats=n_repeats, random_state=random_state,
+    )
+
+    return {
+        "ranker": _table(ranker_result.importances_mean),
+        "regressor": _table(regressor_result.importances_mean),
+        "method": "sklearn.inspection.permutation_importance：在 auxiliary_holdout 独立留出频道上逐列打乱特征、"
+                  "测量指标下降幅度（排序头用预测值与真实标签的Spearman相关系数下降，概率头用负MAE下降），"
+                  f"n_repeats={n_repeats}，负值（打乱后指标反而变好，视为噪声）截断为0后按占比换算。"
+                  "与上面 feature_importance（训练期分裂增益）互补——这个是留出集扰动测试，更贴近真实泛化重要性。",
+        "n_eval_rows": len(labeled),
+    }
+
+
 def calibrate_and_conformalize(reg_model: lgb.LGBMRegressor, aux_holdout: list[dict], fetched_at: datetime,
                                 season_coefs: dict, label_fn, conformal_alpha: float = CONFORMAL_ALPHA) -> dict:
     """§4.2 probability calibration + §5 conformal interval, both fit on
@@ -736,6 +792,7 @@ def run() -> dict:
         "calibration": None,
         "backtest_stratified": None,
         "feature_importance": None,
+        "permutation_importance": None,
     }
     potential_scores: dict[str, dict] = {}
 
@@ -766,6 +823,9 @@ def run() -> dict:
         potential_meta["calibration"] = {
             k: v for k, v in calib.items() if k != "calibrator"  # sklearn model itself isn't JSON-serializable
         }
+        potential_meta["permutation_importance"] = compute_permutation_importance(
+            final_ranker, final_regressor, aux_holdout, fetched_at, season_coefs,
+        )
 
         # Two passes: calibrated probability naturally clusters near the ~7%
         # base rate for most channels (that's what "calibrated" means when

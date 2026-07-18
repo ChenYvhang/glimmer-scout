@@ -56,20 +56,20 @@ export default function BacktestPage() {
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-white mb-1">回测对照</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-[32px] font-bold text-ink-100 mb-1">回测对照</h1>
+        <p className="text-sm text-ink-400">
           评估固定切分点前 60 天快照；标签为切分点后动能中位数较之前涨幅 ≥
           {potential_model.label_threshold.threshold_used} 倍且 ≥50% 视频个体加速。
         </p>
       </div>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-300 mb-3">
+        <h2 className="text-xl font-medium text-ink-100 mb-3">
           分层命中率（按订阅数分层，Top-20 / Top-100）
         </h2>
         <div className="border border-white/10 rounded-xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-gray-400 text-xs">
+            <thead className="bg-white/[0.03] text-ink-400 text-xs">
               <tr>
                 <th rowSpan={2} className="text-left px-3 py-2 align-bottom">分层</th>
                 <th rowSpan={2} className="text-right px-3 py-2 align-bottom">候选数</th>
@@ -94,15 +94,15 @@ export default function BacktestPage() {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-gray-600 mt-2">
+        <p className="text-xs text-ink-600 mt-2">
           样本不足的分层仅供参考；&lt;1K 订阅频道（{backtest.excluded_below_1k_count} 个）仅计入全局行。
           全局 lift 反映挖掘潜力新星的能力，分层 lift 反映同量级排序精度。
         </p>
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-300 mb-3">Top-20 vs Top-100（global）</h2>
-        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-glimmer-500/25">
+        <h2 className="text-xl font-medium text-ink-100 mb-3">Top-20 vs Top-100（global）</h2>
+        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-accent/25">
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kScanData} margin={{ left: 0, right: 20, top: 10 }}>
@@ -111,7 +111,7 @@ export default function BacktestPage() {
                 <YAxis tick={{ fontSize: 11, fill: "#8b8f9c" }} label={{ value: "命中率 %", angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }} formatter={(v) => `${Number(v).toFixed(1)}%`} />
                 <Bar dataKey="baseline" name="baseline" fill="#4b5563" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="model" name="模型" fill="#c98500" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="model" name="模型" fill="#ff8b26" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -119,10 +119,10 @@ export default function BacktestPage() {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-300 mb-3">
+        <h2 className="text-xl font-medium text-ink-100 mb-3">
           {potential_model.method === "dual_head_gbdt" ? "双头模型（排序头 + 概率头）" : "启发式打分"} · 校准与置信区间
         </h2>
-        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] space-y-4 transition-colors duration-300 hover:border-glimmer-500/25">
+        <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] space-y-4 transition-colors duration-300 hover:border-accent/25">
           <div className="grid grid-cols-3 gap-4 text-sm">
             <Metric label="训练样本数" value={`${potential_model.training_sample_count}`} />
             <Metric label="正例占比" value={`${((potential_model.positive_label_rate ?? 0) * 100).toFixed(1)}%`} />
@@ -132,7 +132,7 @@ export default function BacktestPage() {
           </div>
           {potential_model.calibration && (
             <div>
-              <h3 className="text-xs font-medium text-gray-400 mb-2">
+              <h3 className="text-xs font-medium text-ink-400 mb-2">
                 Platt(sigmoid) 校准曲线（校准集：未参与训练的独立频道，n={potential_model.calibration.n_calibration_rows}） · Conformal
                 目标覆盖率 {(potential_model.calibration.target_coverage * 100).toFixed(0)}% · 实际覆盖率{" "}
                 {potential_model.calibration.actual_coverage !== null
@@ -160,11 +160,11 @@ export default function BacktestPage() {
                       type="linear" dataKey="y" data={[{ x: 0, y: 0 }, { x: 100, y: 100 }]}
                       stroke="#4b5563" strokeDasharray="4 4" dot={false} legendType="none" activeDot={false}
                     />
-                    <Scatter data={calibrationPoints} fill="#c98500" />
+                    <Scatter data={calibrationPoints} fill="#ff8b26" />
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xs text-gray-600 mt-1">气泡大小 = 该分箱样本数；越贴近对角虚线，校准越准。</p>
+              <p className="text-xs text-ink-600 mt-1">气泡大小 = 该分箱样本数；越贴近对角虚线，校准越准。</p>
             </div>
           )}
         </div>
@@ -172,8 +172,8 @@ export default function BacktestPage() {
 
       {potential_model.feature_importance && (
         <section>
-          <h2 className="text-sm font-semibold text-gray-300 mb-1">特征重要性（可解释性）</h2>
-          <p className="text-xs text-gray-600 mb-3">{potential_model.feature_importance.method}</p>
+          <h2 className="text-xl font-medium text-ink-100 mb-1">特征重要性（训练期增益，可解释性）</h2>
+          <p className="text-xs text-ink-600 mb-3">{potential_model.feature_importance.method}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FeatureImportanceChart
               title="排序头（LGBMRanker，决定 Top-K 榜单顺序）"
@@ -186,6 +186,25 @@ export default function BacktestPage() {
           </div>
         </section>
       )}
+
+      {potential_model.permutation_importance && (
+        <section>
+          <h2 className="text-xl font-medium text-ink-100 mb-1">Permutation Importance（留出集扰动测试）</h2>
+          <p className="text-xs text-ink-600 mb-3">
+            {potential_model.permutation_importance.method}（n_eval_rows={potential_model.permutation_importance.n_eval_rows}）
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FeatureImportanceChart
+              title="排序头（Spearman 相关系数下降）"
+              entries={potential_model.permutation_importance.ranker}
+            />
+            <FeatureImportanceChart
+              title="概率头（负 MAE 下降）"
+              entries={potential_model.permutation_importance.regressor}
+            />
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -194,16 +213,16 @@ function FeatureImportanceChart({ title, entries }: { title: string; entries: { 
   const top = entries.slice(0, 8);
   const maxImportance = Math.max(...top.map((e) => e.importance), 1);
   return (
-    <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-glimmer-500/25">
-      <h3 className="text-xs font-medium text-gray-400 mb-3">{title}</h3>
+    <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-accent/25">
+      <h3 className="text-xs font-medium text-ink-400 mb-3">{title}</h3>
       <div className="space-y-1.5">
         {top.map((e) => (
           <div key={e.feature} className="flex items-center gap-2 text-xs">
-            <span className="w-48 shrink-0 text-gray-400 truncate">{FEATURE_LABELS[e.feature] ?? e.feature}</span>
+            <span className="w-48 shrink-0 text-ink-400 truncate">{FEATURE_LABELS[e.feature] ?? e.feature}</span>
             <div className="flex-1 bg-white/5 rounded h-3 overflow-hidden">
-              <div className="bg-glimmer-400 h-full" style={{ width: `${(e.importance / maxImportance) * 100}%` }} />
+              <div className="bg-accent h-full" style={{ width: `${(e.importance / maxImportance) * 100}%` }} />
             </div>
-            <span className="w-14 text-right text-gray-500">{e.importance.toFixed(1)}%</span>
+            <span className="w-14 text-right text-ink-400">{e.importance.toFixed(1)}%</span>
           </div>
         ))}
       </div>
@@ -215,10 +234,10 @@ function TierRow({ tier, highlight }: { tier: BacktestTier; highlight?: boolean 
   const k20 = tier.per_k["20"];
   const k100 = tier.per_k["100"];
   return (
-    <tr className={clsx("transition-colors duration-150 hover:bg-white/[0.04]", highlight ? "bg-glimmer-500/5 font-medium" : "border-t border-white/5")}>
-      <td className="px-3 py-2 text-gray-200">{tier.tier === "global" ? "全局" : tier.tier}</td>
-      <td className="px-3 py-2 text-right text-gray-400">{tier.n_candidates}</td>
-      <td className="px-3 py-2 text-right text-gray-400">{tier.n_positive}</td>
+    <tr className={clsx("transition-colors duration-150 hover:bg-white/[0.04]", highlight ? "bg-accent/5 font-medium" : "border-t border-white/5")}>
+      <td className="px-3 py-2 text-ink-100">{tier.tier === "global" ? "全局" : tier.tier}</td>
+      <td className="px-3 py-2 text-right text-ink-400">{tier.n_candidates}</td>
+      <td className="px-3 py-2 text-right text-ink-400">{tier.n_positive}</td>
       <KCells k={k20} insufficient={tier.insufficient_sample} borderLeft />
       <KCells k={k100} insufficient={tier.insufficient_sample} borderLeft />
     </tr>
@@ -229,13 +248,13 @@ function KCells({ k, insufficient, borderLeft }: { k: TopKResult; insufficient: 
   const border = borderLeft ? "border-l border-white/5" : "";
   return (
     <>
-      <td className={`px-3 py-2 text-right text-gray-400 ${border}`}>{(k.baseline_hit_rate * 100).toFixed(1)}%</td>
-      <td className="px-3 py-2 text-right text-gray-200">{(k.model_hit_rate * 100).toFixed(1)}%</td>
+      <td className={`px-3 py-2 text-right text-ink-400 ${border}`}>{(k.baseline_hit_rate * 100).toFixed(1)}%</td>
+      <td className="px-3 py-2 text-right text-ink-100">{(k.model_hit_rate * 100).toFixed(1)}%</td>
       <td className="px-3 py-2 text-right">
         {insufficient ? (
-          <span className="text-gray-600 text-xs">样本不足</span>
+          <span className="text-ink-600 text-xs">样本不足</span>
         ) : (
-          <span className="text-glimmer-300">{k.lift !== null ? `${k.lift.toFixed(2)}×` : "n/a"}</span>
+          <span className="text-accent">{k.lift !== null ? `${k.lift.toFixed(2)}×` : "n/a"}</span>
         )}
       </td>
     </>
@@ -245,8 +264,8 @@ function KCells({ k, insufficient, borderLeft }: { k: TopKResult; insufficient: 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
-      <div className="text-[11px] text-gray-500">{label}</div>
-      <div className="text-lg font-semibold text-gray-200">{value}</div>
+      <div className="text-[11px] text-ink-400">{label}</div>
+      <div className="text-lg font-semibold text-ink-100">{value}</div>
     </div>
   );
 }
