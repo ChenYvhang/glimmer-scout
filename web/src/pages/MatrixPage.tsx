@@ -144,7 +144,7 @@ export default function MatrixPage() {
           <select
             value={activeProductId ?? ""}
             onChange={(e) => setProductId(e.target.value)}
-            className="bg-[#11162a] border border-white/15 rounded-md text-sm px-3 py-1.5 text-ink-100 transition-colors duration-200 focus:outline-none focus:border-[var(--color-accent)]/60"
+            className="bg-[#0d1448] border border-white/15 rounded-md text-sm px-3 py-1.5 text-ink-100 transition-colors duration-200 focus:outline-none focus:border-[var(--color-accent)]/60"
           >
             {data.products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -157,7 +157,7 @@ export default function MatrixPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("matrix.searchPlaceholder")}
-            className="bg-[#11162a] border border-white/15 rounded-md text-sm px-3 py-1.5 text-ink-100 placeholder:text-ink-600 transition-colors duration-200 focus:outline-none focus:border-[var(--color-accent)]/60"
+            className="bg-[#0d1448] border border-white/15 rounded-md text-sm px-3 py-1.5 text-ink-100 placeholder:text-ink-600 transition-colors duration-200 focus:outline-none focus:border-[var(--color-accent)]/60"
           />
         </div>
       </div>
@@ -277,7 +277,7 @@ export default function MatrixPage() {
       </div>
 
       {compareIds.length >= 2 && !compareOpen && (
-        <div className="fixed bottom-6 right-6 z-30 flex items-center gap-3 bg-[#1a2036] border border-white/15 rounded-full pl-4 pr-2 py-2 shadow-2xl animate-fade-in-up">
+        <div className="fixed bottom-6 right-6 z-30 flex items-center gap-3 bg-[#16205e] border border-white/15 rounded-full pl-4 pr-2 py-2 shadow-2xl animate-fade-in-up">
           <span className="text-sm text-ink-100">{t("matrix.compareSelected", { n: compareIds.length })}</span>
           <button
             onClick={() => setCompareOpen(true)}

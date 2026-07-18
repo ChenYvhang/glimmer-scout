@@ -109,7 +109,7 @@ export default function BacktestPage() {
                 <CartesianGrid stroke="#262c42" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="k" tick={{ fontSize: 12, fill: "#8b8f9c" }} />
                 <YAxis tick={{ fontSize: 11, fill: "#8b8f9c" }} label={{ value: t("backtest.axisHitRate"), angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }} formatter={(v) => `${Number(v).toFixed(1)}%`} />
+                <Tooltip contentStyle={{ background: "#16205e", border: "1px solid #2c3782", fontSize: 12 }} formatter={(v) => `${Number(v).toFixed(1)}%`} />
                 <Bar dataKey="baseline" name={t("backtest.colBaseline")} fill="#4b5563" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="model" name={t("backtest.colModel")} fill="#ff8b26" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -157,7 +157,7 @@ export default function BacktestPage() {
                     />
                     <ZAxis type="number" dataKey="n" range={[40, 240]} />
                     <Tooltip
-                      contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }}
+                      contentStyle={{ background: "#16205e", border: "1px solid #2c3782", fontSize: 12 }}
                       formatter={(v, name) => [name === "n" ? `${v}` : `${Number(v).toFixed(1)}%`, `${name}`]}
                     />
                     <Line

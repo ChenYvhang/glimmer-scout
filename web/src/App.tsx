@@ -19,7 +19,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0a0f1c]/90 backdrop-blur overflow-hidden">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070d38]/90 backdrop-blur overflow-hidden">
         <div className="glimmer-aura" aria-hidden="true" />
         <div className="glimmer-particles" aria-hidden="true">
           <span /><span /><span /><span /><span /><span />
