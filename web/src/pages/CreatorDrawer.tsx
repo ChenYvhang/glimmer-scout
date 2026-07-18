@@ -60,8 +60,8 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={onClose} />
-      <div className="relative w-full max-w-[720px] h-full bg-[#12141b] border-l border-white/10 overflow-y-auto shadow-2xl animate-slide-in-right">
-        <div className="sticky top-0 bg-[#12141b]/95 backdrop-blur border-b border-white/10 px-6 py-4 flex items-start justify-between gap-4">
+      <div className="relative w-full max-w-[720px] h-full bg-[#11162a] border-l border-white/10 overflow-y-auto shadow-2xl animate-slide-in-right">
+        <div className="sticky top-0 bg-[#11162a]/95 backdrop-blur border-b border-white/10 px-6 py-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-ink-100 truncate">{creator.title}</h2>
             <a
@@ -138,11 +138,11 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
               <div className="h-40">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={velocitySeries} margin={{ left: -20, top: 4, right: 8 }}>
-                    <CartesianGrid stroke="#2a2d38" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#2d3350" strokeDasharray="3 3" />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8b8f9c" }} minTickGap={40} />
                     <YAxis tick={{ fontSize: 10, fill: "#8b8f9c" }} width={36} />
                     <Tooltip
-                      contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }}
+                      contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }}
                       labelStyle={{ color: "#e5e7eb" }}
                     />
                     <Line
@@ -227,7 +227,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                               <BarChart data={breakdown} layout="vertical" margin={{ left: 0, right: 8 }}>
                                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: "#8b8f9c" }} />
                                 <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "#8b8f9c" }} />
-                                <Tooltip contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }} />
+                                <Tooltip contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }} />
                                 <Bar dataKey="value" fill="#ff8b26" radius={[0, 4, 4, 0]} />
                               </BarChart>
                             </ResponsiveContainer>
@@ -240,7 +240,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                               <BarChart data={contributions} layout="vertical" margin={{ left: 0, right: 8 }}>
                                 <XAxis type="number" tick={{ fontSize: 10, fill: "#8b8f9c" }} />
                                 <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "#8b8f9c" }} />
-                                <Tooltip contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }} />
+                                <Tooltip contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }} />
                                 <Bar dataKey="value" fill="#6b7280" radius={[0, 4, 4, 0]} />
                               </BarChart>
                             </ResponsiveContainer>
@@ -518,7 +518,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           <select
             value={productId}
             onChange={(e) => handleProductChange(e.target.value)}
-            className="bg-[#12141b] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100"
+            className="bg-[#11162a] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100"
           >
             {products.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -534,7 +534,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
             min={0}
             value={actualViews}
             onChange={(e) => setActualViews(e.target.value)}
-            className="w-full bg-[#12141b] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
+            className="w-full bg-[#11162a] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
           />
         </div>
         <div>
@@ -545,7 +545,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
             step={0.01}
             value={engagementRate}
             onChange={(e) => setEngagementRate(e.target.value)}
-            className="w-full bg-[#12141b] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
+            className="w-full bg-[#11162a] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
           />
         </div>
       </div>
@@ -564,7 +564,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          className="w-full bg-[#12141b] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 resize-none"
+          className="w-full bg-[#11162a] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 resize-none"
         />
       </div>
       <div className="flex items-center gap-3">

@@ -51,7 +51,7 @@ export default function CandidatePoolPanel({
               setBudgetCap(capInput === "" || Number.isNaN(n) ? undefined : n);
             }}
             placeholder={t("pool.budgetUnset")}
-            className="w-28 bg-[#12141b] border border-white/10 rounded-md text-xs px-2 py-1 text-ink-100 tabular-nums focus:outline-none focus:border-[var(--color-accent)]/50"
+            className="w-28 bg-[#11162a] border border-white/10 rounded-md text-xs px-2 py-1 text-ink-100 tabular-nums focus:outline-none focus:border-[var(--color-accent)]/50"
           />
           <span className="text-xs text-ink-600">USD</span>
         </div>

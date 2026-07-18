@@ -106,10 +106,10 @@ export default function BacktestPage() {
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kScanData} margin={{ left: 0, right: 20, top: 10 }}>
-                <CartesianGrid stroke="#232631" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="#262c42" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="k" tick={{ fontSize: 12, fill: "#8b8f9c" }} />
                 <YAxis tick={{ fontSize: 11, fill: "#8b8f9c" }} label={{ value: t("backtest.axisHitRate"), angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }} formatter={(v) => `${Number(v).toFixed(1)}%`} />
+                <Tooltip contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }} formatter={(v) => `${Number(v).toFixed(1)}%`} />
                 <Bar dataKey="baseline" name={t("backtest.colBaseline")} fill="#4b5563" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="model" name={t("backtest.colModel")} fill="#ff8b26" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -146,7 +146,7 @@ export default function BacktestPage() {
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
-                    <CartesianGrid stroke="#232631" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#262c42" strokeDasharray="3 3" />
                     <XAxis
                       type="number" dataKey="x" domain={[0, 100]} tick={{ fontSize: 11, fill: "#8b8f9c" }}
                       label={{ value: t("backtest.axisPredicted"), position: "insideBottom", offset: -5, fill: "#6b7280", fontSize: 11 }}
@@ -157,7 +157,7 @@ export default function BacktestPage() {
                     />
                     <ZAxis type="number" dataKey="n" range={[40, 240]} />
                     <Tooltip
-                      contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }}
+                      contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }}
                       formatter={(v, name) => [name === "n" ? `${v}` : `${Number(v).toFixed(1)}%`, `${name}`]}
                     />
                     <Line

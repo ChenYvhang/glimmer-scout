@@ -82,7 +82,7 @@ function ThumbSymbol({ cx, cy, size, payload, hoveredId, onHover, inPool, onRepo
           onError={() => setBroken(true)}
         />
       ) : (
-        <circle cx={cx} cy={cy} r={r} fill="#2a2d38" />
+        <circle cx={cx} cy={cy} r={r} fill="#2d3350" />
       )}
       <circle
         cx={cx}
@@ -94,10 +94,10 @@ function ThumbSymbol({ cx, cy, size, payload, hoveredId, onHover, inPool, onRepo
       />
       {inPool && (
         <g>
-          <circle cx={cx + r * 0.72} cy={cy - r * 0.72} r={5} fill="#e5e7eb" stroke="#0b0d12" strokeWidth={1} />
+          <circle cx={cx + r * 0.72} cy={cy - r * 0.72} r={5} fill="#e5e7eb" stroke="#0a0f1c" strokeWidth={1} />
           <path
             d={`M ${cx + r * 0.72 - 2.2} ${cy - r * 0.72} l 1.6 1.6 l 3 -3.2`}
-            stroke="#0b0d12"
+            stroke="#0a0f1c"
             strokeWidth={1.2}
             fill="none"
             strokeLinecap="round"
@@ -194,7 +194,7 @@ export default function ScatterMatrix({
         )}
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
-            <CartesianGrid stroke="#232631" strokeDasharray="3 3" />
+            <CartesianGrid stroke="#262c42" strokeDasharray="3 3" />
             <XAxis
               type="number"
               dataKey="resonance"
@@ -249,8 +249,8 @@ export default function ScatterMatrix({
               fill="transparent"
               label={{ value: t("scatter.quadrantSkip"), position: "insideBottomLeft", fill: "#5b5f6b", fontSize: 11 }}
             />
-            <ReferenceLine x={QUADRANT_SPLIT} stroke="#333844" strokeDasharray="3 3" />
-            <ReferenceLine y={QUADRANT_SPLIT} stroke="#333844" strokeDasharray="3 3" />
+            <ReferenceLine x={QUADRANT_SPLIT} stroke="#333a52" strokeDasharray="3 3" />
+            <ReferenceLine y={QUADRANT_SPLIT} stroke="#333a52" strokeDasharray="3 3" />
 
             <Tooltip
               cursor={{ strokeDasharray: "3 3" }}
@@ -258,7 +258,7 @@ export default function ScatterMatrix({
                 if (!active || !payload?.length) return null;
                 const p = payload[0].payload as ScatterPlotPoint;
                 return (
-                  <div className="flex gap-2 bg-[#1a1c24] border border-white/15 rounded-md p-2 text-xs max-w-[220px]">
+                  <div className="flex gap-2 bg-[#1a2036] border border-white/15 rounded-md p-2 text-xs max-w-[220px]">
                     {p.thumbnail && (
                       <img src={p.thumbnail} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
                     )}

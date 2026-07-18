@@ -58,7 +58,7 @@ export default function CompareModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={onClose} />
-      <div className="relative w-full max-w-[900px] max-h-[85vh] overflow-y-auto bg-[#12141b] border border-white/10 rounded-xl shadow-2xl p-6">
+      <div className="relative w-full max-w-[900px] max-h-[85vh] overflow-y-auto bg-[#11162a] border border-white/10 rounded-xl shadow-2xl p-6">
         <div className="flex items-start justify-between mb-4">
           <h2 className="text-xl font-medium text-ink-100">{t("compare.title", { n: creators.length })}</h2>
           <button
@@ -88,10 +88,10 @@ export default function CompareModal({
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius="75%">
-                <PolarGrid stroke="#2a2d38" />
+                <PolarGrid stroke="#2d3350" />
                 <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10, fill: "#8b8f9c" }} />
                 <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#6b7280" }} />
-                <Tooltip contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }} />
+                <Tooltip contentStyle={{ background: "#1a2036", border: "1px solid #333a52", fontSize: 12 }} />
                 {creators.map((c, i) => (
                   <Radar
                     key={c.channel_id}
