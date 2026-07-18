@@ -3,8 +3,10 @@ import { Loading } from "../components/Loading";
 import { StatusBadge } from "../components/StatusBadge";
 import FlywheelCounter from "../components/FlywheelCounter";
 import clsx from "clsx";
+import { useLocale } from "../lib/i18n";
 
 export default function SystemStatusPage() {
+  const { t } = useLocale();
   const { data, loading } = useDataset();
   if (loading || !data) return <Loading />;
 
@@ -13,9 +15,9 @@ export default function SystemStatusPage() {
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <h1 className="text-[32px] font-bold text-ink-100 mb-1">系统状态</h1>
+        <h1 className="text-[32px] font-bold text-ink-100 mb-1">{t("status.title")}</h1>
         <p className="text-sm text-ink-400">
-          采集基准时间 {new Date(meta.fetched_at).toLocaleString("zh-CN")}
+          {t("status.fetchedAt", { time: new Date(meta.fetched_at).toLocaleString("zh-CN") })}
         </p>
         <div className="mt-2">
           <FlywheelCounter channelCount={meta.channel_count} />
@@ -23,7 +25,7 @@ export default function SystemStatusPage() {
       </div>
 
       <section>
-        <h2 className="text-xl font-medium text-ink-100 mb-3">四层架构状态</h2>
+        <h2 className="text-xl font-medium text-ink-100 mb-3">{t("status.architectureTitle")}</h2>
         <div className="grid grid-cols-1 gap-3">
           {meta.architecture_layers.map((layer) => (
             <div
@@ -41,7 +43,7 @@ export default function SystemStatusPage() {
       </section>
 
       <section>
-        <h2 className="text-xl font-medium text-ink-100 mb-3">数据源接入状态</h2>
+        <h2 className="text-xl font-medium text-ink-100 mb-3">{t("status.dataSourcesTitle")}</h2>
         <div className="flex flex-wrap gap-2">
           {meta.data_sources.map((ds) => (
             <span
@@ -53,42 +55,42 @@ export default function SystemStatusPage() {
                   : "bg-gray-500/15 text-ink-400 border-gray-500/30",
               )}
             >
-              {ds.platform} · {ds.status === "connected" ? "已接入" : "待接入"}
+              {ds.platform} · {ds.status === "connected" ? t("status.connected") : t("status.pending")}
             </span>
           ))}
         </div>
       </section>
 
       <section>
-        <h2 className="text-xl font-medium text-ink-100 mb-3">采集与覆盖率</h2>
+        <h2 className="text-xl font-medium text-ink-100 mb-3">{t("status.coverageTitle")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MetricCard label="频道总数" value={meta.channel_count.toLocaleString()} />
-          <MetricCard label="视频总数" value={meta.video_count.toLocaleString()} />
+          <MetricCard label={t("status.metricChannels")} value={meta.channel_count.toLocaleString()} />
+          <MetricCard label={t("status.metricVideos")} value={meta.video_count.toLocaleString()} />
           <MetricCard
-            label="视觉理解覆盖"
+            label={t("status.metricVisionCoverage")}
             value={`${meta.vision_coverage.analyzed ?? 0} / ${meta.vision_coverage.total}`}
             sub={meta.vision_coverage.note}
           />
           <MetricCard
-            label="决策卡覆盖"
+            label={t("status.metricDecisionCoverage")}
             value={`${meta.decision_coverage.generated ?? 0} / ${meta.decision_coverage.total}`}
           />
         </div>
       </section>
 
       <section>
-        <h2 className="text-xl font-medium text-ink-100 mb-3">配额消耗（YouTube Data API v3）</h2>
+        <h2 className="text-xl font-medium text-ink-100 mb-3">{t("status.quotaTitle")}</h2>
         <div className="grid grid-cols-5 gap-3">
           <MetricCard label="search.list" value={meta.quota_used.search.toLocaleString()} />
           <MetricCard label="channels.list" value={meta.quota_used.channels.toLocaleString()} />
           <MetricCard label="playlistItems.list" value={meta.quota_used.playlistItems.toLocaleString()} />
           <MetricCard label="videos.list" value={meta.quota_used.videos.toLocaleString()} />
-          <MetricCard label="合计" value={meta.quota_used.total.toLocaleString()} highlight />
+          <MetricCard label={t("status.quotaTotal")} value={meta.quota_used.total.toLocaleString()} highlight />
         </div>
       </section>
 
       <section>
-        <h2 className="text-xl font-medium text-ink-100 mb-3">年龄偏差验证</h2>
+        <h2 className="text-xl font-medium text-ink-100 mb-3">{t("status.ageBiasTitle")}</h2>
         <div
           className={clsx(
             "border rounded-xl p-4 text-sm",
@@ -99,33 +101,33 @@ export default function SystemStatusPage() {
         >
           <div className="flex items-center gap-2 mb-1">
             <span className={meta.age_bias_validation.pass ? "text-emerald-300" : "text-red-300"}>
-              {meta.age_bias_validation.pass ? "✓ 通过" : "✗ 未通过"}
+              {meta.age_bias_validation.pass ? t("status.ageBiasPass") : t("status.ageBiasFail")}
             </span>
             <span className="text-ink-400 text-xs">
-              斜率 {meta.age_bias_validation.slope.toFixed(4)} · 阈值 {meta.age_bias_validation.threshold}
+              {t("status.ageBiasSlope", { slope: meta.age_bias_validation.slope.toFixed(4), threshold: meta.age_bias_validation.threshold })}
             </span>
           </div>
           <p className="text-xs text-ink-400">
-            相对动能不随频道年龄单调漂移，累积播放量偏差已消除。
+            {t("status.ageBiasNote")}
           </p>
         </div>
       </section>
 
       <section>
-        <h2 className="text-xl font-medium text-ink-100 mb-3">模型状态</h2>
+        <h2 className="text-xl font-medium text-ink-100 mb-3">{t("status.modelTitle")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <MetricCard
-            label="潜力分模型"
-            value={meta.model_status.potential_score_model === "dual_head_gbdt" ? "双头GBDT（真训练）" : "启发式（样本不足）"}
-            sub={`训练样本数 ${meta.model_status.gbdt_sample_count}`}
+            label={t("status.modelPotential")}
+            value={meta.model_status.potential_score_model === "dual_head_gbdt" ? t("status.modelPotentialGbdt") : t("status.modelPotentialHeuristic")}
+            sub={t("status.modelTrainSamples", { n: meta.model_status.gbdt_sample_count })}
           />
-          <MetricCard label="视觉模型" value="GLM-4.6V-Flash" sub="多模态内容理解，见理解层" />
-          <MetricCard label="时序 Transformer" value="⏳ 待接入" sub="demo规模样本不足以训练序列模型" />
+          <MetricCard label={t("status.modelVision")} value="GLM-4.6V-Flash" sub={t("status.modelVisionSub")} />
+          <MetricCard label={t("status.modelTemporal")} value={t("status.modelTemporalValue")} sub={t("status.modelTemporalSub")} />
         </div>
       </section>
 
       <footer className="pt-6 border-t border-white/10 text-center">
-        <span className="glimmer-text text-sm font-medium">Catch the glimmer before dawn.</span>
+        <span className="glimmer-text text-sm font-medium">{t("status.footer")}</span>
       </footer>
     </div>
   );

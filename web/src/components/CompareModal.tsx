@@ -8,10 +8,11 @@ import {
   Tooltip,
 } from "recharts";
 import type { Creator, Product } from "../lib/schema";
+import { useLocale, type TranslationKey } from "../lib/i18n";
 
-const DIMENSION_LABELS = [
-  "第一人称视角占比", "防抖需求强度", "运镜复杂度", "场景极限度",
-  "装备可见度", "叙事节奏", "场景多样性", "子弹时间/慢动作需求",
+const DIMENSION_KEYS: TranslationKey[] = [
+  "dim.perspective_ratio", "dim.stabilization_demand", "dim.motion_complexity", "dim.scene_extremity",
+  "dim.gear_visibility", "dim.narrative_pace", "dim.scene_diversity", "dim.slow_motion_demand",
 ];
 
 const SERIES_COLORS = ["#ff8b26", "#6b7280", "#e8e8e8"];
@@ -34,11 +35,12 @@ export default function CompareModal({
   onClose: () => void;
   onRemove: (channelId: string) => void;
 }) {
+  const { t } = useLocale();
   const productById = new Map(products.map((p) => [p.id, p]));
   const activeProduct = activeProductId ? productById.get(activeProductId) : undefined;
 
-  const radarData = DIMENSION_LABELS.map((label, i) => {
-    const row: Record<string, string | number> = { dimension: label };
+  const radarData = DIMENSION_KEYS.map((key, i) => {
+    const row: Record<string, string | number> = { dimension: t(key) };
     creators.forEach((c) => {
       row[c.title] = (c.vision?.content_vector?.[i] ?? 0) * 100;
     });
@@ -58,11 +60,11 @@ export default function CompareModal({
       <div className="absolute inset-0 bg-black/70 animate-fade-in" onClick={onClose} />
       <div className="relative w-full max-w-[900px] max-h-[85vh] overflow-y-auto bg-[#12141b] border border-white/10 rounded-xl shadow-2xl p-6">
         <div className="flex items-start justify-between mb-4">
-          <h2 className="text-xl font-medium text-ink-100">对比模式（{creators.length} 人）</h2>
+          <h2 className="text-xl font-medium text-ink-100">{t("compare.title", { n: creators.length })}</h2>
           <button
             onClick={onClose}
             className="text-ink-400 hover:text-ink-100 text-xl leading-none px-2 transition-all duration-200 hover:rotate-90"
-            aria-label="关闭"
+            aria-label={t("drawer.close")}
           >
             ×
           </button>
@@ -82,7 +84,7 @@ export default function CompareModal({
         </div>
 
         <section className="mb-6">
-          <h3 className="text-sm font-semibold text-ink-100 mb-2">八维语义雷达图（vision.content_vector）</h3>
+          <h3 className="text-sm font-semibold text-ink-100 mb-2">{t("compare.radarTitle")}</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius="75%">
@@ -106,15 +108,15 @@ export default function CompareModal({
         </section>
 
         <section className="mb-6">
-          <h3 className="text-sm font-semibold text-ink-100 mb-2">双分对比</h3>
+          <h3 className="text-sm font-semibold text-ink-100 mb-2">{t("compare.scoresTitle")}</h3>
           <div className="border border-white/10 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-white/[0.03] text-ink-400 text-xs">
                 <tr>
-                  <th className="text-left px-3 py-2 font-medium">达人</th>
-                  <th className="text-right px-3 py-2 font-medium">潜力分 P</th>
+                  <th className="text-left px-3 py-2 font-medium">{t("compare.colCreator")}</th>
+                  <th className="text-right px-3 py-2 font-medium">{t("compare.colP")}</th>
                   <th className="text-right px-3 py-2 font-medium">
-                    共振分 R{activeProduct ? `（${activeProduct.name}）` : ""}
+                    {t("compare.colR")}{activeProduct ? `（${activeProduct.name}）` : ""}
                   </th>
                 </tr>
               </thead>
@@ -135,12 +137,12 @@ export default function CompareModal({
 
         {activeProductId && allDims.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-ink-100 mb-2">共振明细（feature_breakdown）</h3>
+            <h3 className="text-sm font-semibold text-ink-100 mb-2">{t("compare.breakdownTitle")}</h3>
             <div className="border border-white/10 rounded-lg overflow-hidden overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-white/[0.03] text-ink-400 text-xs">
                   <tr>
-                    <th className="text-left px-3 py-2 font-medium">功能维度</th>
+                    <th className="text-left px-3 py-2 font-medium">{t("compare.colDim")}</th>
                     {creators.map((c) => (
                       <th key={c.channel_id} className="text-right px-3 py-2 font-medium">{c.title}</th>
                     ))}

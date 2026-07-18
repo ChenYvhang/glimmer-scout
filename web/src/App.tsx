@@ -5,15 +5,17 @@ import BacktestPage from "./pages/BacktestPage";
 import SystemStatusPage from "./pages/SystemStatusPage";
 import { useDataset } from "./lib/useDataset";
 import FlywheelCounter from "./components/FlywheelCounter";
-
-const NAV_ITEMS = [
-  { to: "/", label: "引爆矩阵" },
-  { to: "/backtest", label: "回测对照" },
-  { to: "/status", label: "系统状态" },
-];
+import LanguageToggle from "./components/LanguageToggle";
+import { useLocale } from "./lib/i18n";
 
 function App() {
   const { data, error } = useDataset();
+  const { t } = useLocale();
+  const navItems = [
+    { to: "/", label: t("nav.matrix") },
+    { to: "/backtest", label: t("nav.backtest") },
+    { to: "/status", label: t("nav.status") },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -43,7 +45,7 @@ function App() {
             Catch Glimmer Before Dawn
           </span>
           <nav className="flex gap-1 ml-auto">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -66,12 +68,15 @@ function App() {
               <FlywheelCounter channelCount={data.meta.channel_count} />
             </div>
           )}
+          <div className="border-l border-white/10 pl-4">
+            <LanguageToggle />
+          </div>
         </div>
       </header>
 
       {error && (
         <div className="bg-red-500/10 text-red-300 text-sm px-6 py-2 text-center animate-fade-in-up">
-          数据加载失败：{error}
+          {t("app.loadError", { error })}
         </div>
       )}
 

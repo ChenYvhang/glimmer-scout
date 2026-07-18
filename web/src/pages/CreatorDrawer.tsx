@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Line,
   LineChart,
@@ -10,12 +10,12 @@ import {
   Bar,
   BarChart,
 } from "recharts";
-import { useState } from "react";
 import clsx from "clsx";
 import type { Creator, Product } from "../lib/schema";
 import { addToCandidatePool, removeFromCandidatePool } from "../lib/candidatePool";
 import { useCandidatePool } from "../lib/useCandidatePool";
 import { getOutcome, saveOutcome } from "../lib/outcomeStore";
+import { useLocale } from "../lib/i18n";
 
 interface Props {
   creator: Creator;
@@ -38,6 +38,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function CreatorDrawer({ creator, products, onClose }: Props) {
+  const { t } = useLocale();
   const velocitySeries = useMemo(
     () =>
       creator.videos
@@ -85,13 +86,13 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                   : "border-[var(--color-accent)]/40 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10",
               )}
             >
-              {inPool ? "移出候选池" : "+ 加入候选池"}
+              {inPool ? t("drawer.leavePool") : t("drawer.joinPool")}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="text-ink-400 hover:text-ink-100 text-xl leading-none px-2 transition-all duration-200 hover:rotate-90"
-              aria-label="关闭"
+              aria-label={t("drawer.close")}
             >
               ×
             </button>
@@ -100,14 +101,14 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
 
         <div className="px-6 py-5">
           {/* Layer 1: 基础信息 */}
-          <Section title="① 基础信息">
+          <Section title={t("drawer.section1")}>
             <div className="grid grid-cols-3 gap-3 text-sm">
-              <Stat label="垂类" value={creator.vertical} />
-              <Stat label="国家/地区" value={creator.country ?? "未知"} />
-              <Stat label="订阅数" value={fmtNum(creator.subscriber_count)} />
-              <Stat label="总播放量" value={fmtNum(creator.view_count_total)} />
-              <Stat label="视频总数" value={fmtNum(creator.video_count_total)} />
-              <Stat label="频道年龄（天）" value={fmtNum(creator.channel_age_days)} />
+              <Stat label={t("drawer.statVertical")} value={creator.vertical} />
+              <Stat label={t("drawer.statCountry")} value={creator.country ?? t("drawer.statCountryUnknown")} />
+              <Stat label={t("drawer.statSubscribers")} value={fmtNum(creator.subscriber_count)} />
+              <Stat label={t("drawer.statViews")} value={fmtNum(creator.view_count_total)} />
+              <Stat label={t("drawer.statVideoCount")} value={fmtNum(creator.video_count_total)} />
+              <Stat label={t("drawer.statChannelAge")} value={fmtNum(creator.channel_age_days)} />
             </div>
             {creator.thumbnails.length > 0 && (
               <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
@@ -124,14 +125,14 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
           </Section>
 
           {/* Layer 2: 动能特征 */}
-          <Section title="② 动能特征（数据层）">
+          <Section title={t("drawer.section2")}>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-3">
-              <Stat label="加速度 momentum_acceleration" value={fmtNum(creator.features.momentum_acceleration, 3)} />
-              <Stat label="季节调整动能 adjusted_momentum" value={fmtNum(creator.features.adjusted_momentum, 3)} />
-              <Stat label="拐点日期" value={creator.features.inflection_point?.slice(0, 10) ?? "无"} />
-              <Stat label="近90天发布数" value={fmtNum(creator.features.publish_cadence_90d)} />
-              <Stat label="点赞率" value={fmtNum(creator.features.engagement_like_ratio * 100, 2) + "%"} />
-              <Stat label="评论率" value={fmtNum(creator.features.engagement_comment_ratio * 100, 3) + "%"} />
+              <Stat label={t("drawer.statMomentumAccel")} value={fmtNum(creator.features.momentum_acceleration, 3)} />
+              <Stat label={t("drawer.statAdjustedMomentum")} value={fmtNum(creator.features.adjusted_momentum, 3)} />
+              <Stat label={t("drawer.statInflection")} value={creator.features.inflection_point?.slice(0, 10) ?? t("drawer.statInflectionNone")} />
+              <Stat label={t("drawer.statCadence90d")} value={fmtNum(creator.features.publish_cadence_90d)} />
+              <Stat label={t("drawer.statLikeRatio")} value={fmtNum(creator.features.engagement_like_ratio * 100, 2) + "%"} />
+              <Stat label={t("drawer.statCommentRatio")} value={fmtNum(creator.features.engagement_comment_ratio * 100, 3) + "%"} />
             </div>
             {velocitySeries.length > 1 && (
               <div className="h-40">
@@ -150,7 +151,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                       stroke="#ff8b26"
                       dot={false}
                       strokeWidth={2}
-                      name="相对动能"
+                      name={t("drawer.velocityRelative")}
                     />
                     <Line
                       type="monotone"
@@ -159,7 +160,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                       dot={false}
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
-                      name="季节调整动能"
+                      name={t("drawer.velocitySeasonAdjusted")}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -168,33 +169,33 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
           </Section>
 
           {/* Layer 3: 视觉理解 */}
-          <Section title="③ 视觉理解（匹配层 · GLM-4.6V-Flash）">
+          <Section title={t("drawer.section3")}>
             {creator.vision ? (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <Stat label="运动类型" value={creator.vision.sport_types.join("、") || "—"} />
-                  <Stat label="镜头视角" value={creator.vision.camera_perspective} />
-                  <Stat label="叙事节奏" value={creator.vision.narrative_pace} />
-                  <Stat label="防抖需求" value={fmtNum(creator.vision.stabilization_demand, 2)} />
-                  <Stat label="场景极限度" value={fmtNum(creator.vision.scene_extremity, 2)} />
-                  <Stat label="装备可见度" value={fmtNum(creator.vision.gear_visibility, 2)} />
+                  <Stat label={t("drawer.visionSportTypes")} value={creator.vision.sport_types.join("、") || "—"} />
+                  <Stat label={t("drawer.visionPerspective")} value={creator.vision.camera_perspective} />
+                  <Stat label={t("drawer.visionPace")} value={creator.vision.narrative_pace} />
+                  <Stat label={t("drawer.visionStabilization")} value={fmtNum(creator.vision.stabilization_demand, 2)} />
+                  <Stat label={t("drawer.visionExtremity")} value={fmtNum(creator.vision.scene_extremity, 2)} />
+                  <Stat label={t("drawer.visionGear")} value={fmtNum(creator.vision.gear_visibility, 2)} />
                 </div>
                 <p className="text-ink-400 text-xs leading-relaxed bg-white/5 rounded-md p-3 mt-2">
                   {creator.vision.evidence}
                 </p>
               </div>
             ) : (
-              <p className="text-ink-400 text-sm">未分析——尚未进入视觉理解队列。</p>
+              <p className="text-ink-400 text-sm">{t("drawer.visionNotAnalyzed")}</p>
             )}
           </Section>
 
           {/* Layer 4: 匹配分 */}
-          <Section title="④ 匹配分（潜力分 P × 共振分 R）">
+          <Section title={t("drawer.section4")}>
             <div className="mb-4">
               <div className="text-xs text-ink-400 mb-1">
-                潜力分 P
+                {t("drawer.potentialP")}
                 {creator.scores.potential.value_lo !== undefined && creator.scores.potential.value_hi !== undefined && (
-                  <span> · conformal 区间 [{fmtNum(creator.scores.potential.value_lo, 1)}, {fmtNum(creator.scores.potential.value_hi, 1)}]</span>
+                  <span> · {t("drawer.conformalRange")} [{fmtNum(creator.scores.potential.value_lo, 1)}, {fmtNum(creator.scores.potential.value_hi, 1)}]</span>
                 )}
               </div>
               <div className="text-2xl font-semibold text-accent mb-1.5">{fmtNum(creator.scores.potential.value, 1)}</div>
@@ -220,7 +221,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <div className="text-[11px] text-ink-400 mb-1">功能级共振（feature_breakdown）</div>
+                          <div className="text-[11px] text-ink-400 mb-1">{t("drawer.featureBreakdown")}</div>
                           <div className="h-28">
                             <ResponsiveContainer width="100%" height="100%">
                               <BarChart data={breakdown} layout="vertical" margin={{ left: 0, right: 8 }}>
@@ -233,7 +234,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                           </div>
                         </div>
                         <div>
-                          <div className="text-[11px] text-ink-400 mb-1">语义维度 cosine 分维贡献</div>
+                          <div className="text-[11px] text-ink-400 mb-1">{t("drawer.cosineContributions")}</div>
                           <div className="h-28">
                             <ResponsiveContainer width="100%" height="100%">
                               <BarChart data={contributions} layout="vertical" margin={{ left: 0, right: 8 }}>
@@ -251,33 +252,33 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                 })}
               </div>
             ) : (
-              <p className="text-ink-400 text-sm">共振分待计算——依赖视觉理解结果。</p>
+              <p className="text-ink-400 text-sm">{t("drawer.resonanceNotReady")}</p>
             )}
           </Section>
 
           {/* Layer 5: 决策卡 */}
-          <Section title="⑤ 决策卡（裂变层 · DeepSeek）">
+          <Section title={t("drawer.section5")}>
             {creator.decision ? (
               <div className="space-y-3 text-sm">
                 <div className="flex flex-wrap gap-3 items-center">
                   <span className="px-2 py-1 rounded-md bg-accent/15 text-accent text-xs">
-                    推荐单品：{productById.get(creator.decision.recommended_product)?.name ?? creator.decision.recommended_product}
+                    {t("drawer.recommendedProduct")}{productById.get(creator.decision.recommended_product)?.name ?? creator.decision.recommended_product}
                   </span>
                   <span className="text-xs text-ink-400">
-                    综合分 combined = {fmtNum(creator.decision.combined_score, 2)}
+                    {t("drawer.combinedScore", { v: fmtNum(creator.decision.combined_score, 2) })}
                   </span>
                   {creator.decision.risk_review.competitor_flag && (
                     <span className="px-2 py-1 rounded-md bg-red-500/15 text-red-300 text-xs">
-                      竞品风险：{creator.decision.risk_review.flagged_keywords.join(", ")}
+                      {t("drawer.competitorRisk")}{creator.decision.risk_review.flagged_keywords.join(", ")}
                     </span>
                   )}
                 </div>
                 <p className="text-ink-100 leading-relaxed">{creator.decision.reasoning}</p>
                 <div className="text-xs text-ink-400">
-                  建议报价区间：
+                  {t("drawer.priceRange")}
                   {creator.decision.price_range.min !== null
                     ? ` $${creator.decision.price_range.min} - $${creator.decision.price_range.max}`
-                    : " 无法估算（订阅数隐藏）"}
+                    : ` ${t("drawer.priceUnavailable")}`}
                   {creator.decision.price_range.basis && ` · ${creator.decision.price_range.basis}`}
                 </div>
                 <div className="text-xs text-ink-400">{creator.decision.localization_notes}</div>
@@ -286,17 +287,17 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                 )}
               </div>
             ) : (
-              <p className="text-ink-400 text-sm">未生成——决策卡仅对综合分 Top-60 预生成。</p>
+              <p className="text-ink-400 text-sm">{t("drawer.decisionNotGenerated")}</p>
             )}
           </Section>
 
           {/* Layer 6: 裂变 tab */}
-          <Section title="⑥ 裂变（platform × language）">
+          <Section title={t("drawer.section6")}>
             <ScriptsPanel creator={creator} />
           </Section>
 
           {/* Layer 7: 回流层 */}
-          <Section title="⑦ 回流层（结果录入）">
+          <Section title={t("drawer.section7")}>
             <OutcomeForm creator={creator} products={products} />
           </Section>
         </div>
@@ -330,32 +331,31 @@ function ConfidenceRange({ value, lo, hi }: { value: number; lo: number; hi: num
   );
 }
 
-const PLATFORM_LABELS: Record<string, string> = {
-  tiktok_vertical: "TikTok 竖版",
-  youtube_horizontal: "YouTube 横版",
-};
-const LANGUAGE_LABELS: Record<string, string> = { zh: "中文", en: "英文" };
-
 function ScriptsPanel({ creator }: { creator: Creator }) {
+  const { t } = useLocale();
   const scripts = creator.scripts;
   const [platform, setPlatform] = useState<"tiktok_vertical" | "youtube_horizontal">("tiktok_vertical");
   const [language, setLanguage] = useState<"zh" | "en">("zh");
   const [copied, setCopied] = useState(false);
 
+  const platformLabel = (p: "tiktok_vertical" | "youtube_horizontal") =>
+    p === "tiktok_vertical" ? t("drawer.platformTiktok") : t("drawer.platformYoutube");
+  const languageLabel = (l: "zh" | "en") => (l === "zh" ? t("drawer.languageZh") : t("drawer.languageEn"));
+
   if (scripts && scripts.length > 0) {
     const active = scripts.find((s) => s.platform === platform && s.language === language) ?? null;
 
     const asText = (s: NonNullable<typeof active>) =>
-      `【${PLATFORM_LABELS[s.platform]} · ${LANGUAGE_LABELS[s.language]}】\n\n` +
-      `钩子：${s.hook}\n\n` +
-      `分镜：\n${s.storyboard_beats.map((b) => `- ${b}`).join("\n")}\n\n` +
-      `口播要点：\n${s.voiceover_points.map((b) => `- ${b}`).join("\n")}\n\n` +
-      `字幕文案：${s.caption_copy}\n\n` +
-      `CTA：${s.cta_placement}`;
+      `【${platformLabel(s.platform)} · ${languageLabel(s.language)}】\n\n` +
+      `${t("drawer.scriptHook")}：${s.hook}\n\n` +
+      `${t("drawer.scriptStoryboard")}：\n${s.storyboard_beats.map((b) => `- ${b}`).join("\n")}\n\n` +
+      `${t("drawer.scriptVoiceover")}：\n${s.voiceover_points.map((b) => `- ${b}`).join("\n")}\n\n` +
+      `${t("drawer.scriptCaption")}：${s.caption_copy}\n\n` +
+      `${t("drawer.scriptCta")}：${s.cta_placement}`;
 
     return (
       <div className="space-y-3 text-sm">
-        <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-accent/15 text-accent">完整脚本</span>
+        <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-accent/15 text-accent">{t("drawer.scriptsFull")}</span>
         <div className="flex flex-wrap gap-3">
           <div className="flex gap-1 bg-white/5 rounded-md p-0.5">
             {(["tiktok_vertical", "youtube_horizontal"] as const).map((p) => (
@@ -367,7 +367,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
                   platform === p ? "bg-accent/20 text-accent" : "text-ink-400 hover:text-ink-100",
                 )}
               >
-                {PLATFORM_LABELS[p]}
+                {platformLabel(p)}
               </button>
             ))}
           </div>
@@ -381,7 +381,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
                   language === l ? "bg-accent/20 text-accent" : "text-ink-400 hover:text-ink-100",
                 )}
               >
-                {LANGUAGE_LABELS[l]}
+                {languageLabel(l)}
               </button>
             ))}
           </div>
@@ -390,32 +390,32 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
         {active ? (
           <div className="border border-white/10 rounded-lg p-3 space-y-2">
             <div>
-              <div className="text-[11px] text-ink-400 mb-0.5">钩子（前3秒）</div>
+              <div className="text-[11px] text-ink-400 mb-0.5">{t("drawer.scriptHook")}</div>
               <p className="text-ink-100">{active.hook}</p>
             </div>
             <div>
-              <div className="text-[11px] text-ink-400 mb-0.5">分镜要点</div>
+              <div className="text-[11px] text-ink-400 mb-0.5">{t("drawer.scriptStoryboard")}</div>
               <ul className="list-disc list-inside text-xs text-ink-400 space-y-0.5">
                 {active.storyboard_beats.map((b, i) => <li key={i}>{b}</li>)}
               </ul>
             </div>
             <div>
-              <div className="text-[11px] text-ink-400 mb-0.5">口播要点</div>
+              <div className="text-[11px] text-ink-400 mb-0.5">{t("drawer.scriptVoiceover")}</div>
               <ul className="list-disc list-inside text-xs text-ink-400 space-y-0.5">
                 {active.voiceover_points.map((b, i) => <li key={i}>{b}</li>)}
               </ul>
             </div>
             <div>
-              <div className="text-[11px] text-ink-400 mb-0.5">字幕文案</div>
+              <div className="text-[11px] text-ink-400 mb-0.5">{t("drawer.scriptCaption")}</div>
               <p className="text-xs text-ink-400">{active.caption_copy}</p>
             </div>
             <div>
-              <div className="text-[11px] text-ink-400 mb-0.5">CTA 落点</div>
+              <div className="text-[11px] text-ink-400 mb-0.5">{t("drawer.scriptCta")}</div>
               <p className="text-xs text-ink-400">{active.cta_placement}</p>
             </div>
             <div className="bg-white/5 rounded-md p-2 text-[11px] text-ink-600">
-              引用真实数据：《{active.referenced_evidence.video_title}》 ·
-              "{active.referenced_evidence.vision_evidence_quote}" · 卖点维度：{active.referenced_evidence.top_feature_breakdown_dim}
+              {t("drawer.scriptEvidence")}《{active.referenced_evidence.video_title}》 ·
+              "{active.referenced_evidence.vision_evidence_quote}" · {active.referenced_evidence.top_feature_breakdown_dim}
             </div>
             <div className="flex gap-2 pt-1">
               <button
@@ -426,7 +426,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
                 }}
                 className="px-2.5 py-1 rounded-md border border-white/15 text-xs text-ink-100 hover:bg-white/5 transition-colors"
               >
-                {copied ? "已复制" : "一键复制"}
+                {copied ? t("drawer.copied") : t("drawer.copy")}
               </button>
               <button
                 onClick={() => {
@@ -440,12 +440,12 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
                 }}
                 className="px-2.5 py-1 rounded-md border border-white/15 text-xs text-ink-100 hover:bg-white/5 transition-colors"
               >
-                导出
+                {t("drawer.export")}
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-ink-400 text-sm">该 platform × language 组合暂未生成。</p>
+          <p className="text-ink-400 text-sm">{t("drawer.scriptsMissingCombo")}</p>
         )}
       </div>
     );
@@ -455,7 +455,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
     return (
       <div className="space-y-2 text-sm">
         <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-white/5 text-ink-400 mb-1">
-          脚本方向（轻量版，未进入 Top-20 完整脚本生成）
+          {t("drawer.scriptsLight")}
         </span>
         {creator.decision.creative_variants.map((variant) => (
           <div key={variant.variant_name} className="border border-white/10 rounded-lg p-3 transition-colors duration-300 hover:border-accent/30">
@@ -466,7 +466,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
             </ul>
             <div className="flex gap-3 text-[11px] text-ink-400">
               <span>{variant.target_platform_note}</span>
-              <span>· 目标市场：{variant.target_market}</span>
+              <span>{t("drawer.targetMarket")}{variant.target_market}</span>
             </div>
           </div>
         ))}
@@ -474,10 +474,11 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
     );
   }
 
-  return <p className="text-ink-400 text-sm">未生成——裂变脚本仅对综合分 Top-60（轻量）/ Top-20（完整）预生成。</p>;
+  return <p className="text-ink-400 text-sm">{t("drawer.scriptsNone")}</p>;
 }
 
 function OutcomeForm({ creator, products }: { creator: Creator; products: Product[] }) {
+  const { t } = useLocale();
   const defaultProductId = creator.decision?.recommended_product ?? products[0]?.id ?? "";
   const [productId, setProductId] = useState(defaultProductId);
   const existing = getOutcome(creator.channel_id, productId);
@@ -513,7 +514,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
     <form onSubmit={handleSubmit} className="space-y-3 text-sm">
       {products.length > 1 && (
         <div>
-          <label className="text-[11px] text-ink-400 block mb-1">对应单品</label>
+          <label className="text-[11px] text-ink-400 block mb-1">{t("outcome.productLabel")}</label>
           <select
             value={productId}
             onChange={(e) => handleProductChange(e.target.value)}
@@ -527,7 +528,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
       )}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[11px] text-ink-400 block mb-1">实际播放量</label>
+          <label className="text-[11px] text-ink-400 block mb-1">{t("outcome.actualViews")}</label>
           <input
             type="number"
             min={0}
@@ -537,7 +538,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           />
         </div>
         <div>
-          <label className="text-[11px] text-ink-400 block mb-1">互动率 %</label>
+          <label className="text-[11px] text-ink-400 block mb-1">{t("outcome.engagementRate")}</label>
           <input
             type="number"
             min={0}
@@ -555,10 +556,10 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           onChange={(e) => setIgnited(e.target.checked)}
           className="accent-[var(--color-accent)]"
         />
-        是否引爆
+        {t("outcome.ignited")}
       </label>
       <div>
-        <label className="text-[11px] text-ink-400 block mb-1">备注</label>
+        <label className="text-[11px] text-ink-400 block mb-1">{t("outcome.note")}</label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -571,10 +572,10 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           type="submit"
           className="px-3 py-1.5 rounded-md bg-accent/15 text-accent text-xs border border-accent/40 hover:bg-accent/25 transition-colors"
         >
-          保存结果
+          {t("outcome.save")}
         </button>
         {savedAt && (
-          <span className="text-[11px] text-ink-600">已保存 · {new Date(savedAt).toLocaleString("zh-CN")}</span>
+          <span className="text-[11px] text-ink-600">{t("outcome.saved", { time: new Date(savedAt).toLocaleString("zh-CN") })}</span>
         )}
       </div>
     </form>

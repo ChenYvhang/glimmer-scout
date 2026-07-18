@@ -2,15 +2,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import { SUBSCRIBER_TIERS } from "../lib/subscriberTiers";
 import type { CreatorMarket, DataSource } from "../lib/schema";
-
-const MARKET_LABELS: Record<CreatorMarket, string> = {
-  north_america_europe: "北美/欧洲",
-  greater_china: "大中华区",
-  japan: "日本",
-  korea: "韩国",
-  other: "其他地区",
-  unknown: "未知",
-};
+import { useLocale } from "../lib/i18n";
 
 export interface MatrixFilters {
   verticals: string[];
@@ -32,6 +24,7 @@ function TagMultiSelect({
   selected: string[];
   onToggle: (v: string) => void;
 }) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const available = options.filter((o) => !selected.includes(o));
 
@@ -48,18 +41,18 @@ function TagMultiSelect({
             {labelOf(v)} <span className="text-[10px]">×</span>
           </button>
         ))}
-        {selected.length === 0 && <span className="text-xs text-ink-600">全部</span>}
+        {selected.length === 0 && <span className="text-xs text-ink-600">{t("filter.all")}</span>}
       </div>
       <div className="relative">
         <button
           onClick={() => setOpen((o) => !o)}
           className="w-full text-left bg-[#12141b] border border-white/10 rounded-md text-xs px-2.5 py-1.5 text-ink-400 hover:border-white/20 transition-colors"
         >
-          + 添加筛选…
+          {t("filter.addFilter")}
         </button>
         {open && (
           <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-[#1a1c24] border border-white/15 rounded-md shadow-lg">
-            {available.length === 0 && <div className="px-2.5 py-1.5 text-xs text-ink-600">没有更多选项</div>}
+            {available.length === 0 && <div className="px-2.5 py-1.5 text-xs text-ink-600">{t("filter.noMoreOptions")}</div>}
             {available.map((o) => (
               <button
                 key={o}
@@ -90,6 +83,8 @@ export default function FilterPanel({
   filters: MatrixFilters;
   onChange: (next: MatrixFilters) => void;
 }) {
+  const { t } = useLocale();
+
   function toggle(key: "verticals" | "markets" | "tiers", value: string) {
     const current = filters[key];
     const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
@@ -98,10 +93,10 @@ export default function FilterPanel({
 
   return (
     <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] flex flex-col gap-5">
-      <h2 className="text-sm font-semibold text-ink-100">筛选</h2>
+      <h2 className="text-sm font-semibold text-ink-100">{t("filter.title")}</h2>
 
       <TagMultiSelect
-        label="垂类"
+        label={t("filter.vertical")}
         options={verticals}
         labelOf={(v) => v}
         selected={filters.verticals}
@@ -109,23 +104,23 @@ export default function FilterPanel({
       />
 
       <TagMultiSelect
-        label="市场"
-        options={Object.keys(MARKET_LABELS)}
-        labelOf={(v) => MARKET_LABELS[v as CreatorMarket] ?? v}
+        label={t("filter.market")}
+        options={["north_america_europe", "greater_china", "japan", "korea", "other", "unknown"]}
+        labelOf={(v) => t(`market.${v as CreatorMarket}`)}
         selected={filters.markets}
         onToggle={(v) => toggle("markets", v)}
       />
 
       <TagMultiSelect
-        label="粉丝量级"
-        options={SUBSCRIBER_TIERS.map((t) => t.name)}
+        label={t("filter.tier")}
+        options={SUBSCRIBER_TIERS.map((tier) => tier.name)}
         labelOf={(v) => v}
         selected={filters.tiers}
         onToggle={(v) => toggle("tiers", v)}
       />
 
       <div>
-        <div className="text-xs font-medium text-ink-400 mb-1.5">平台</div>
+        <div className="text-xs font-medium text-ink-400 mb-1.5">{t("filter.platform")}</div>
         <div className="flex flex-wrap gap-1.5">
           {dataSources.map((ds) => (
             <span
@@ -138,7 +133,7 @@ export default function FilterPanel({
               )}
             >
               {ds.platform}
-              {ds.status !== "connected" && " · 待接入"}
+              {ds.status !== "connected" && ` · ${t("filter.pending")}`}
             </span>
           ))}
         </div>
@@ -151,7 +146,7 @@ export default function FilterPanel({
           onChange={(e) => onChange({ ...filters, hideRiskFlagged: e.target.checked })}
           className="accent-[var(--color-accent)]"
         />
-        隐藏竞品风险标记的达人
+        {t("filter.riskHide")}
       </label>
     </div>
   );

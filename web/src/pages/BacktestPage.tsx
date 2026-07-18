@@ -15,26 +15,28 @@ import clsx from "clsx";
 import { useDataset } from "../lib/useDataset";
 import { Loading } from "../components/Loading";
 import type { BacktestTier, TopKResult } from "../lib/schema";
+import { useLocale, type TranslationKey } from "../lib/i18n";
 
 // 网页只展示 Top-20 与 Top-100 两档（K=10/50 仍在 dataset.json 里，供之后需要时取用）
 const DISPLAY_K: Array<"20" | "100"> = ["20", "100"];
 
-// score.py FEATURE_NAMES 的中文对照，仅用于展示——数据里的字段名保持英文不变，
+// score.py FEATURE_NAMES 的展示翻译键，仅用于展示——数据里的字段名保持英文不变，
 // 避免图表标签换行/截断，同时不引入"中英文字段名两套真相"的维护负担。
-const FEATURE_LABELS: Record<string, string> = {
-  video_count_in_window: "窗口内视频数",
-  publish_interval_mean_days: "发布间隔均值（天）",
-  publish_interval_std_days: "发布间隔波动（天）",
-  engagement_like_ratio_mean: "点赞率均值",
-  engagement_comment_ratio_mean: "评论率均值",
-  relative_velocity_mean: "相对动能均值",
-  relative_velocity_std: "相对动能波动",
-  channel_age_days_at_window_end: "频道年龄（窗口末，天）",
-  window_momentum_acceleration: "窗口内动能加速度",
-  season_adjusted_relative_velocity_mean: "季节调整后动能均值",
+const FEATURE_KEYS: Record<string, TranslationKey> = {
+  video_count_in_window: "feature.video_count_in_window",
+  publish_interval_mean_days: "feature.publish_interval_mean_days",
+  publish_interval_std_days: "feature.publish_interval_std_days",
+  engagement_like_ratio_mean: "feature.engagement_like_ratio_mean",
+  engagement_comment_ratio_mean: "feature.engagement_comment_ratio_mean",
+  relative_velocity_mean: "feature.relative_velocity_mean",
+  relative_velocity_std: "feature.relative_velocity_std",
+  channel_age_days_at_window_end: "feature.channel_age_days_at_window_end",
+  window_momentum_acceleration: "feature.window_momentum_acceleration",
+  season_adjusted_relative_velocity_mean: "feature.season_adjusted_relative_velocity_mean",
 };
 
 export default function BacktestPage() {
+  const { t } = useLocale();
   const { data, loading } = useDataset();
   if (loading || !data) return <Loading />;
 
@@ -56,62 +58,60 @@ export default function BacktestPage() {
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <h1 className="text-[32px] font-bold text-ink-100 mb-1">回测对照</h1>
+        <h1 className="text-[32px] font-bold text-ink-100 mb-1">{t("backtest.title")}</h1>
         <p className="text-sm text-ink-400">
-          评估固定切分点前 60 天快照；标签为切分点后动能中位数较之前涨幅 ≥
-          {potential_model.label_threshold.threshold_used} 倍且 ≥50% 视频个体加速。
+          {t("backtest.subtitle", { threshold: potential_model.label_threshold.threshold_used })}
         </p>
       </div>
 
       <section>
         <h2 className="text-xl font-medium text-ink-100 mb-3">
-          分层命中率（按订阅数分层，Top-20 / Top-100）
+          {t("backtest.tierTitle")}
         </h2>
         <div className="border border-white/10 rounded-xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-white/[0.03] text-ink-400 text-xs">
               <tr>
-                <th rowSpan={2} className="text-left px-3 py-2 align-bottom">分层</th>
-                <th rowSpan={2} className="text-right px-3 py-2 align-bottom">候选数</th>
-                <th rowSpan={2} className="text-right px-3 py-2 align-bottom">正样本数</th>
+                <th rowSpan={2} className="text-left px-3 py-2 align-bottom">{t("backtest.colTier")}</th>
+                <th rowSpan={2} className="text-right px-3 py-2 align-bottom">{t("backtest.colCandidates")}</th>
+                <th rowSpan={2} className="text-right px-3 py-2 align-bottom">{t("backtest.colPositives")}</th>
                 <th colSpan={3} className="text-center px-3 py-1 border-l border-white/5">Top-20</th>
                 <th colSpan={3} className="text-center px-3 py-1 border-l border-white/5">Top-100</th>
               </tr>
               <tr>
-                <th className="text-right px-3 py-1 border-l border-white/5">baseline</th>
-                <th className="text-right px-3 py-1">模型</th>
-                <th className="text-right px-3 py-1">lift</th>
-                <th className="text-right px-3 py-1 border-l border-white/5">baseline</th>
-                <th className="text-right px-3 py-1">模型</th>
-                <th className="text-right px-3 py-1">lift</th>
+                <th className="text-right px-3 py-1 border-l border-white/5">{t("backtest.colBaseline")}</th>
+                <th className="text-right px-3 py-1">{t("backtest.colModel")}</th>
+                <th className="text-right px-3 py-1">{t("backtest.colLift")}</th>
+                <th className="text-right px-3 py-1 border-l border-white/5">{t("backtest.colBaseline")}</th>
+                <th className="text-right px-3 py-1">{t("backtest.colModel")}</th>
+                <th className="text-right px-3 py-1">{t("backtest.colLift")}</th>
               </tr>
             </thead>
             <tbody>
               <TierRow tier={global} highlight />
-              {tiers.map((t) => (
-                <TierRow key={t.tier} tier={t} />
+              {tiers.map((tr) => (
+                <TierRow key={tr.tier} tier={tr} />
               ))}
             </tbody>
           </table>
         </div>
         <p className="text-xs text-ink-600 mt-2">
-          样本不足的分层仅供参考；&lt;1K 订阅频道（{backtest.excluded_below_1k_count} 个）仅计入全局行。
-          全局 lift 反映挖掘潜力新星的能力，分层 lift 反映同量级排序精度。
+          {t("backtest.tierFootnote", { n: backtest.excluded_below_1k_count })}
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-medium text-ink-100 mb-3">Top-20 vs Top-100（global）</h2>
+        <h2 className="text-xl font-medium text-ink-100 mb-3">{t("backtest.kScanTitle")}</h2>
         <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] transition-colors duration-300 hover:border-accent/25">
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={kScanData} margin={{ left: 0, right: 20, top: 10 }}>
                 <CartesianGrid stroke="#232631" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="k" tick={{ fontSize: 12, fill: "#8b8f9c" }} />
-                <YAxis tick={{ fontSize: 11, fill: "#8b8f9c" }} label={{ value: "命中率 %", angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11, fill: "#8b8f9c" }} label={{ value: t("backtest.axisHitRate"), angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: "#1a1c24", border: "1px solid #333844", fontSize: 12 }} formatter={(v) => `${Number(v).toFixed(1)}%`} />
-                <Bar dataKey="baseline" name="baseline" fill="#4b5563" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="model" name="模型" fill="#ff8b26" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="baseline" name={t("backtest.colBaseline")} fill="#4b5563" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="model" name={t("backtest.colModel")} fill="#ff8b26" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -120,24 +120,28 @@ export default function BacktestPage() {
 
       <section>
         <h2 className="text-xl font-medium text-ink-100 mb-3">
-          {potential_model.method === "dual_head_gbdt" ? "双头模型（排序头 + 概率头）" : "启发式打分"} · 校准与置信区间
+          {t("backtest.calibrationTitle", {
+            method: potential_model.method === "dual_head_gbdt" ? t("backtest.methodDualHead") : t("backtest.methodHeuristic"),
+          })}
         </h2>
         <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] space-y-4 transition-colors duration-300 hover:border-accent/25">
           <div className="grid grid-cols-3 gap-4 text-sm">
-            <Metric label="训练样本数" value={`${potential_model.training_sample_count}`} />
-            <Metric label="正例占比" value={`${((potential_model.positive_label_rate ?? 0) * 100).toFixed(1)}%`} />
+            <Metric label={t("backtest.metricTrainSamples")} value={`${potential_model.training_sample_count}`} />
+            <Metric label={t("backtest.metricPositiveRate")} value={`${((potential_model.positive_label_rate ?? 0) * 100).toFixed(1)}%`} />
             {potential_model.calibration && (
-              <Metric label="Brier score" value={potential_model.calibration.brier_score.toFixed(4)} />
+              <Metric label={t("backtest.metricBrier")} value={potential_model.calibration.brier_score.toFixed(4)} />
             )}
           </div>
           {potential_model.calibration && (
             <div>
               <h3 className="text-xs font-medium text-ink-400 mb-2">
-                Platt(sigmoid) 校准曲线（校准集：未参与训练的独立频道，n={potential_model.calibration.n_calibration_rows}） · Conformal
-                目标覆盖率 {(potential_model.calibration.target_coverage * 100).toFixed(0)}% · 实际覆盖率{" "}
-                {potential_model.calibration.actual_coverage !== null
-                  ? `${(potential_model.calibration.actual_coverage * 100).toFixed(1)}%`
-                  : "n/a"}
+                {t("backtest.calibrationCurveTitle", {
+                  n: potential_model.calibration.n_calibration_rows,
+                  target: (potential_model.calibration.target_coverage * 100).toFixed(0),
+                  actual: potential_model.calibration.actual_coverage !== null
+                    ? `${(potential_model.calibration.actual_coverage * 100).toFixed(1)}%`
+                    : "n/a",
+                })}
               </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -145,11 +149,11 @@ export default function BacktestPage() {
                     <CartesianGrid stroke="#232631" strokeDasharray="3 3" />
                     <XAxis
                       type="number" dataKey="x" domain={[0, 100]} tick={{ fontSize: 11, fill: "#8b8f9c" }}
-                      label={{ value: "预测概率 %（校准后）", position: "insideBottom", offset: -5, fill: "#6b7280", fontSize: 11 }}
+                      label={{ value: t("backtest.axisPredicted"), position: "insideBottom", offset: -5, fill: "#6b7280", fontSize: 11 }}
                     />
                     <YAxis
                       type="number" dataKey="y" domain={[0, 100]} tick={{ fontSize: 11, fill: "#8b8f9c" }}
-                      label={{ value: "实际发生频率 %", angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }}
+                      label={{ value: t("backtest.axisObserved"), angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }}
                     />
                     <ZAxis type="number" dataKey="n" range={[40, 240]} />
                     <Tooltip
@@ -164,7 +168,7 @@ export default function BacktestPage() {
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xs text-ink-600 mt-1">气泡大小 = 该分箱样本数；越贴近对角虚线，校准越准。</p>
+              <p className="text-xs text-ink-600 mt-1">{t("backtest.calibrationFootnote")}</p>
             </div>
           )}
         </div>
@@ -172,15 +176,15 @@ export default function BacktestPage() {
 
       {potential_model.feature_importance && (
         <section>
-          <h2 className="text-xl font-medium text-ink-100 mb-1">特征重要性（训练期增益，可解释性）</h2>
+          <h2 className="text-xl font-medium text-ink-100 mb-1">{t("backtest.featureImportanceTitle")}</h2>
           <p className="text-xs text-ink-600 mb-3">{potential_model.feature_importance.method}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FeatureImportanceChart
-              title="排序头（LGBMRanker，决定 Top-K 榜单顺序）"
+              title={t("backtest.rankerTitle")}
               entries={potential_model.feature_importance.ranker}
             />
             <FeatureImportanceChart
-              title="概率头（LGBMRegressor，决定引爆概率数值）"
+              title={t("backtest.regressorTitle")}
               entries={potential_model.feature_importance.regressor}
             />
           </div>
@@ -189,17 +193,17 @@ export default function BacktestPage() {
 
       {potential_model.permutation_importance && (
         <section>
-          <h2 className="text-xl font-medium text-ink-100 mb-1">Permutation Importance（留出集扰动测试）</h2>
+          <h2 className="text-xl font-medium text-ink-100 mb-1">{t("backtest.permImportanceTitle")}</h2>
           <p className="text-xs text-ink-600 mb-3">
-            {potential_model.permutation_importance.method}（n_eval_rows={potential_model.permutation_importance.n_eval_rows}）
+            {potential_model.permutation_importance.method}（{t("backtest.evalRows", { n: potential_model.permutation_importance.n_eval_rows })}）
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FeatureImportanceChart
-              title="排序头（Spearman 相关系数下降）"
+              title={t("backtest.permRankerTitle")}
               entries={potential_model.permutation_importance.ranker}
             />
             <FeatureImportanceChart
-              title="概率头（负 MAE 下降）"
+              title={t("backtest.permRegressorTitle")}
               entries={potential_model.permutation_importance.regressor}
             />
           </div>
@@ -210,6 +214,7 @@ export default function BacktestPage() {
 }
 
 function FeatureImportanceChart({ title, entries }: { title: string; entries: { feature: string; importance: number }[] }) {
+  const { t } = useLocale();
   const top = entries.slice(0, 8);
   const maxImportance = Math.max(...top.map((e) => e.importance), 1);
   return (
@@ -218,7 +223,7 @@ function FeatureImportanceChart({ title, entries }: { title: string; entries: { 
       <div className="space-y-1.5">
         {top.map((e) => (
           <div key={e.feature} className="flex items-center gap-2 text-xs">
-            <span className="w-48 shrink-0 text-ink-400 truncate">{FEATURE_LABELS[e.feature] ?? e.feature}</span>
+            <span className="w-48 shrink-0 text-ink-400 truncate">{FEATURE_KEYS[e.feature] ? t(FEATURE_KEYS[e.feature]) : e.feature}</span>
             <div className="flex-1 bg-white/5 rounded h-3 overflow-hidden">
               <div className="bg-accent h-full" style={{ width: `${(e.importance / maxImportance) * 100}%` }} />
             </div>
@@ -231,11 +236,12 @@ function FeatureImportanceChart({ title, entries }: { title: string; entries: { 
 }
 
 function TierRow({ tier, highlight }: { tier: BacktestTier; highlight?: boolean }) {
+  const { t } = useLocale();
   const k20 = tier.per_k["20"];
   const k100 = tier.per_k["100"];
   return (
     <tr className={clsx("transition-colors duration-150 hover:bg-white/[0.04]", highlight ? "bg-accent/5 font-medium" : "border-t border-white/5")}>
-      <td className="px-3 py-2 text-ink-100">{tier.tier === "global" ? "全局" : tier.tier}</td>
+      <td className="px-3 py-2 text-ink-100">{tier.tier === "global" ? t("backtest.tierGlobal") : tier.tier}</td>
       <td className="px-3 py-2 text-right text-ink-400">{tier.n_candidates}</td>
       <td className="px-3 py-2 text-right text-ink-400">{tier.n_positive}</td>
       <KCells k={k20} insufficient={tier.insufficient_sample} borderLeft />
@@ -245,6 +251,7 @@ function TierRow({ tier, highlight }: { tier: BacktestTier; highlight?: boolean 
 }
 
 function KCells({ k, insufficient, borderLeft }: { k: TopKResult; insufficient: boolean; borderLeft?: boolean }) {
+  const { t } = useLocale();
   const border = borderLeft ? "border-l border-white/5" : "";
   return (
     <>
@@ -252,7 +259,7 @@ function KCells({ k, insufficient, borderLeft }: { k: TopKResult; insufficient: 
       <td className="px-3 py-2 text-right text-ink-100">{(k.model_hit_rate * 100).toFixed(1)}%</td>
       <td className="px-3 py-2 text-right">
         {insufficient ? (
-          <span className="text-ink-600 text-xs">样本不足</span>
+          <span className="text-ink-600 text-xs">{t("backtest.insufficientSample")}</span>
         ) : (
           <span className="text-accent">{k.lift !== null ? `${k.lift.toFixed(2)}×` : "n/a"}</span>
         )}

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useLocale } from "../lib/i18n";
 import {
   CartesianGrid,
   ReferenceArea,
@@ -127,6 +128,7 @@ export default function ScatterMatrix({
   poolIds: Set<string>;
   onBoxSelect: (channelIds: string[]) => void;
 }) {
+  const { t } = useLocale();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [drag, setDrag] = useState<DragRect | null>(null);
   const plotRef = useRef<HTMLDivElement>(null);
@@ -196,20 +198,20 @@ export default function ScatterMatrix({
             <XAxis
               type="number"
               dataKey="resonance"
-              name="共振分 R"
+              name={t("scatter.axisR")}
               domain={[0, 100]}
               tick={{ fontSize: 11, fill: "#8b8f9c" }}
-              label={{ value: "共振分 R", position: "insideBottom", offset: -4, fill: "#6b7280", fontSize: 11 }}
+              label={{ value: t("scatter.axisR"), position: "insideBottom", offset: -4, fill: "#6b7280", fontSize: 11 }}
             />
             <YAxis
               type="number"
               dataKey="potential"
-              name="潜力分 P"
+              name={t("scatter.axisP")}
               domain={[0, 100]}
               tick={{ fontSize: 11, fill: "#8b8f9c" }}
-              label={{ value: "潜力分 P", angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }}
+              label={{ value: t("scatter.axisP"), angle: -90, position: "insideLeft", fill: "#6b7280", fontSize: 11 }}
             />
-            <ZAxis type="number" dataKey="subscriber_count" range={[120, 700]} name="订阅数" />
+            <ZAxis type="number" dataKey="subscriber_count" range={[120, 700]} name={t("matrix.colSubscribers")} />
 
             <ReferenceArea
               x1={QUADRANT_SPLIT}
@@ -221,7 +223,7 @@ export default function ScatterMatrix({
               stroke="var(--color-accent)"
               strokeOpacity={0.2}
               strokeDasharray="4 4"
-              label={{ value: "引爆候选", position: "insideTopRight", fill: "var(--color-accent)", fontSize: 11, fontWeight: 600 }}
+              label={{ value: t("scatter.quadrantIgnition"), position: "insideTopRight", fill: "var(--color-accent)", fontSize: 11, fontWeight: 600 }}
             />
             <ReferenceArea
               x1={0}
@@ -229,7 +231,7 @@ export default function ScatterMatrix({
               y1={QUADRANT_SPLIT}
               y2={100}
               fill="transparent"
-              label={{ value: "会火但不共振", position: "insideTopLeft", fill: "#5b5f6b", fontSize: 11 }}
+              label={{ value: t("scatter.quadrantViral"), position: "insideTopLeft", fill: "#5b5f6b", fontSize: 11 }}
             />
             <ReferenceArea
               x1={QUADRANT_SPLIT}
@@ -237,7 +239,7 @@ export default function ScatterMatrix({
               y1={0}
               y2={QUADRANT_SPLIT}
               fill="transparent"
-              label={{ value: "共振但起不来", position: "insideBottomRight", fill: "#5b5f6b", fontSize: 11 }}
+              label={{ value: t("scatter.quadrantResonant"), position: "insideBottomRight", fill: "#5b5f6b", fontSize: 11 }}
             />
             <ReferenceArea
               x1={0}
@@ -245,7 +247,7 @@ export default function ScatterMatrix({
               y1={0}
               y2={QUADRANT_SPLIT}
               fill="transparent"
-              label={{ value: "暂不考虑", position: "insideBottomLeft", fill: "#5b5f6b", fontSize: 11 }}
+              label={{ value: t("scatter.quadrantSkip"), position: "insideBottomLeft", fill: "#5b5f6b", fontSize: 11 }}
             />
             <ReferenceLine x={QUADRANT_SPLIT} stroke="#333844" strokeDasharray="3 3" />
             <ReferenceLine y={QUADRANT_SPLIT} stroke="#333844" strokeDasharray="3 3" />
@@ -304,12 +306,12 @@ export default function ScatterMatrix({
       <div className="flex flex-wrap gap-4 mt-2 text-xs text-ink-400">
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full border-2 border-[var(--color-accent)] inline-block" />
-          引爆候选（P≥50 且 R≥50）
+          {t("scatter.legendIgnition")}
         </span>
-        <span>圆点大小 = 订阅数 · 悬停放大预览 · 拖拽框选批量加入候选池</span>
+        <span>{t("scatter.legendSize")}</span>
         {hovered && (
           <span className="text-ink-400">
-            当前：<span className="text-ink-100">{hovered.title}</span>
+            {t("scatter.current")}<span className="text-ink-100">{hovered.title}</span>
           </span>
         )}
       </div>

@@ -12,6 +12,7 @@ import { subscriberTierOf } from "../lib/subscriberTiers";
 import { addToCandidatePool } from "../lib/candidatePool";
 import { useCandidatePool } from "../lib/useCandidatePool";
 import { useMatrixKeyboardShortcuts } from "../lib/keyboardShortcuts";
+import { useLocale } from "../lib/i18n";
 
 interface PlotPoint extends ScatterPlotPoint {
   hasDecision: boolean;
@@ -22,6 +23,7 @@ const ONBOARDING_KEY = "onboarding:matrixDismissed";
 const MAX_COMPARE = 3;
 
 export default function MatrixPage() {
+  const { t } = useLocale();
   const { data, loading } = useDataset();
   const [productId, setProductId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -132,10 +134,10 @@ export default function MatrixPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-[32px] font-bold text-ink-100">引爆矩阵</h1>
+          <h1 className="text-[32px] font-bold text-ink-100">{t("matrix.title")}</h1>
           <p className="text-sm text-ink-400 mt-1">
-            {data.meta.channel_count} 个频道 · 视觉理解覆盖 {visionCovered} · 决策卡覆盖{" "}
-            {data.meta.decision_coverage.generated}
+            {data.meta.channel_count} {t("matrix.statsChannels")} · {t("matrix.statsVisionCoverage")} {visionCovered} ·{" "}
+            {t("matrix.statsDecisionCoverage")} {data.meta.decision_coverage.generated}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -154,7 +156,7 @@ export default function MatrixPage() {
             ref={searchInputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索达人名称…（/ 聚焦）"
+            placeholder={t("matrix.searchPlaceholder")}
             className="bg-[#12141b] border border-white/15 rounded-md text-sm px-3 py-1.5 text-ink-100 placeholder:text-ink-600 transition-colors duration-200 focus:outline-none focus:border-[var(--color-accent)]/60"
           />
         </div>
@@ -167,11 +169,11 @@ export default function MatrixPage() {
       {!onboardingDismissed && (
         <div className="flex items-center justify-between gap-3 mb-3 px-3 py-2 rounded-md bg-white/[0.03] border border-white/10 text-xs text-ink-400">
           <span>
-            <kbd className="px-1 py-0.5 rounded bg-white/10 text-ink-100">/</kbd> 聚焦搜索 ·{" "}
+            <kbd className="px-1 py-0.5 rounded bg-white/10 text-ink-100">/</kbd> {t("matrix.onboardingFocus")} ·{" "}
             <kbd className="px-1 py-0.5 rounded bg-white/10 text-ink-100">↑↓</kbd>+
-            <kbd className="px-1 py-0.5 rounded bg-white/10 text-ink-100">Enter</kbd> 移动并打开 ·{" "}
-            <kbd className="px-1 py-0.5 rounded bg-white/10 text-ink-100">Esc</kbd> 关闭 ·
-            散点图拖拽框选批量加入候选池 · 勾选榜单最多3人对比
+            <kbd className="px-1 py-0.5 rounded bg-white/10 text-ink-100">Enter</kbd> {t("matrix.onboardingMove")} ·{" "}
+            <kbd className="px-1 py-0.5 rounded bg-white/10 text-ink-100">Esc</kbd> {t("matrix.onboardingClose")} ·{" "}
+            {t("matrix.onboardingDrag")} · {t("matrix.onboardingCompare")}
           </span>
           <button
             onClick={() => {
@@ -179,7 +181,7 @@ export default function MatrixPage() {
               setOnboardingDismissed(true);
             }}
             className="shrink-0 text-ink-600 hover:text-ink-100"
-            aria-label="关闭提示"
+            aria-label={t("matrix.onboardingDismiss")}
           >
             ×
           </button>
@@ -204,20 +206,20 @@ export default function MatrixPage() {
 
           <div className="mt-6">
             <h2 className="text-xl font-medium text-ink-100 mb-2">
-              排名（按 √(P×R) 综合分，共 {points.length} 个已覆盖视觉理解的候选）
+              {t("matrix.rankingTitle", { n: points.length })}
             </h2>
             <div className="border border-white/10 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-white/[0.03] text-ink-400 text-xs">
                   <tr>
-                    <th className="text-center px-3 py-2 font-medium">对比</th>
-                    <th className="text-left px-3 py-2 font-medium">达人</th>
-                    <th className="text-left px-3 py-2 font-medium">垂类</th>
-                    <th className="text-right px-3 py-2 font-medium">P</th>
-                    <th className="text-right px-3 py-2 font-medium">R</th>
-                    <th className="text-right px-3 py-2 font-medium">综合分</th>
-                    <th className="text-right px-3 py-2 font-medium">订阅数</th>
-                    <th className="text-center px-3 py-2 font-medium">决策卡</th>
+                    <th className="text-center px-3 py-2 font-medium">{t("matrix.colCompare")}</th>
+                    <th className="text-left px-3 py-2 font-medium">{t("matrix.colCreator")}</th>
+                    <th className="text-left px-3 py-2 font-medium">{t("matrix.colVertical")}</th>
+                    <th className="text-right px-3 py-2 font-medium">{t("matrix.colP")}</th>
+                    <th className="text-right px-3 py-2 font-medium">{t("matrix.colR")}</th>
+                    <th className="text-right px-3 py-2 font-medium">{t("matrix.colCombined")}</th>
+                    <th className="text-right px-3 py-2 font-medium">{t("matrix.colSubscribers")}</th>
+                    <th className="text-center px-3 py-2 font-medium">{t("matrix.colDecision")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -259,7 +261,7 @@ export default function MatrixPage() {
               </table>
               {points.length === 0 && (
                 <p className="text-center text-ink-400 text-sm py-8">
-                  当前筛选条件下没有已完成视觉理解的候选，试试切换单品或调整左侧筛选。
+                  {t("matrix.emptyState")}
                 </p>
               )}
             </div>
@@ -276,17 +278,17 @@ export default function MatrixPage() {
 
       {compareIds.length >= 2 && !compareOpen && (
         <div className="fixed bottom-6 right-6 z-30 flex items-center gap-3 bg-[#1a1c24] border border-white/15 rounded-full pl-4 pr-2 py-2 shadow-2xl animate-fade-in-up">
-          <span className="text-sm text-ink-100">已选 {compareIds.length} 人对比</span>
+          <span className="text-sm text-ink-100">{t("matrix.compareSelected", { n: compareIds.length })}</span>
           <button
             onClick={() => setCompareOpen(true)}
             className="px-3 py-1.5 rounded-full bg-accent/15 text-accent text-xs border border-accent/40 hover:bg-accent/25 transition-colors"
           >
-            打开对比
+            {t("matrix.compareOpen")}
           </button>
           <button
             onClick={() => setCompareIds([])}
             className="text-ink-400 hover:text-ink-100 text-sm px-1"
-            aria-label="清空对比"
+            aria-label={t("matrix.compareClear")}
           >
             ×
           </button>
