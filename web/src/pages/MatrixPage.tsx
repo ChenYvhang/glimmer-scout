@@ -12,7 +12,7 @@ import { subscriberTierOf } from "../lib/subscriberTiers";
 import { addToCandidatePool } from "../lib/candidatePool";
 import { useCandidatePool } from "../lib/useCandidatePool";
 import { useMatrixKeyboardShortcuts } from "../lib/keyboardShortcuts";
-import { useLocale } from "../lib/i18n";
+import { useLocale, verticalLabel } from "../lib/i18n";
 
 interface PlotPoint extends ScatterPlotPoint {
   hasDecision: boolean;
@@ -242,7 +242,7 @@ export default function MatrixPage() {
                         />
                       </td>
                       <td className="px-3 py-2 text-ink-100 max-w-[220px] truncate">{p.title}</td>
-                      <td className="px-3 py-2 text-ink-400">{p.vertical}</td>
+                      <td className="px-3 py-2 text-ink-400">{verticalLabel(t, p.vertical)}</td>
                       <td className="px-3 py-2 text-right text-accent">{p.potential.toFixed(1)}</td>
                       <td className="px-3 py-2 text-right text-ink-100">{p.resonance.toFixed(1)}</td>
                       <td className="px-3 py-2 text-right text-ink-100">{p.combined.toFixed(1)}</td>

@@ -52,3 +52,12 @@ export function useLocale(): LocaleContextValue {
   if (!ctx) throw new Error("useLocale must be used within LocaleProvider");
   return ctx;
 }
+
+// creator.vertical values come from the data pipeline as raw Chinese labels
+// (滑雪, 骑行, ...). Only the fixed, known set has a `vertical.*` dictionary
+// entry; anything else (a future category not yet translated) falls back to
+// the raw value instead of leaking a literal "vertical.xxx" key string.
+export function verticalLabel(t: LocaleContextValue["t"], raw: string): string {
+  const key = `vertical.${raw}` as TranslationKey;
+  return key in zh ? t(key) : raw;
+}

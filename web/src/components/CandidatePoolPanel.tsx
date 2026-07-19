@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Creator, CreatorMarket } from "../lib/schema";
 import { removeFromCandidatePool, setBudgetCap } from "../lib/candidatePool";
-import { useLocale } from "../lib/i18n";
+import { useLocale, verticalLabel } from "../lib/i18n";
 
 function priceMidpoint(c: Creator): number | null {
   const pr = c.decision?.price_range;
@@ -106,7 +106,7 @@ export default function CandidatePoolPanel({
               .sort((a, b) => b[1] - a[1])
               .map(([v, n]) => (
                 <div key={v} className="flex items-center gap-2 text-xs">
-                  <span className="text-ink-400 w-16 truncate">{v}</span>
+                  <span className="text-ink-400 w-16 truncate">{verticalLabel(t, v)}</span>
                   <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
                     <div
                       className="h-full bg-gray-500"

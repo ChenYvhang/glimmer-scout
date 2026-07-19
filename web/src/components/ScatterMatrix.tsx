@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useLocale } from "../lib/i18n";
+import { useLocale, verticalLabel } from "../lib/i18n";
 import {
   CartesianGrid,
   ReferenceArea,
@@ -264,7 +264,7 @@ export default function ScatterMatrix({
                     )}
                     <div className="min-w-0">
                       <div className="font-medium text-ink-100 truncate">{p.title}</div>
-                      <div className="text-ink-400">{p.vertical}</div>
+                      <div className="text-ink-400">{verticalLabel(t, p.vertical)}</div>
                       <div className="text-ink-400 tabular-nums">
                         P={p.potential.toFixed(1)} R={p.resonance.toFixed(1)}
                       </div>

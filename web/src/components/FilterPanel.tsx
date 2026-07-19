@@ -2,7 +2,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import { SUBSCRIBER_TIERS } from "../lib/subscriberTiers";
 import type { CreatorMarket, DataSource } from "../lib/schema";
-import { useLocale } from "../lib/i18n";
+import { useLocale, verticalLabel } from "../lib/i18n";
 
 export interface MatrixFilters {
   verticals: string[];
@@ -98,7 +98,7 @@ export default function FilterPanel({
       <TagMultiSelect
         label={t("filter.vertical")}
         options={verticals}
-        labelOf={(v) => v}
+        labelOf={(v) => verticalLabel(t, v)}
         selected={filters.verticals}
         onToggle={(v) => toggle("verticals", v)}
       />

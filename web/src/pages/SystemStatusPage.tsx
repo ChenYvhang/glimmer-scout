@@ -3,7 +3,14 @@ import { Loading } from "../components/Loading";
 import { StatusBadge } from "../components/StatusBadge";
 import FlywheelCounter from "../components/FlywheelCounter";
 import clsx from "clsx";
-import { useLocale } from "../lib/i18n";
+import { useLocale, type TranslationKey } from "../lib/i18n";
+
+const ARCHITECTURE_LAYER_LABELS: Record<string, { name: TranslationKey; note: TranslationKey }> = {
+  "数据层": { name: "status.layerData", note: "status.layerDataNote" },
+  "匹配层": { name: "status.layerMatching", note: "status.layerMatchingNote" },
+  "裂变层": { name: "status.layerFission", note: "status.layerFissionNote" },
+  "复盘层": { name: "status.layerFeedback", note: "status.layerFeedbackNote" },
+};
 
 export default function SystemStatusPage() {
   const { t, locale } = useLocale();
@@ -27,18 +34,23 @@ export default function SystemStatusPage() {
       <section>
         <h2 className="text-xl font-medium text-ink-100 mb-3">{t("status.architectureTitle")}</h2>
         <div className="grid grid-cols-1 gap-3">
-          {meta.architecture_layers.map((layer) => (
-            <div
-              key={layer.layer}
-              className="border border-white/10 rounded-xl p-4 bg-white/[0.02] flex items-start gap-4 transition-colors duration-300 hover:border-accent/25"
-            >
-              <div className="w-20 shrink-0 text-sm font-medium text-ink-100 pt-0.5">{layer.layer}</div>
-              <div className="flex-1">
-                <StatusBadge status={layer.status} />
-                <p className="text-xs text-ink-400 mt-2 leading-relaxed">{layer.note}</p>
+          {meta.architecture_layers.map((layer) => {
+            const labels = ARCHITECTURE_LAYER_LABELS[layer.layer];
+            return (
+              <div
+                key={layer.layer}
+                className="border border-white/10 rounded-xl p-4 bg-white/[0.02] flex items-start gap-4 transition-colors duration-300 hover:border-accent/25"
+              >
+                <div className="w-20 shrink-0 text-sm font-medium text-ink-100 pt-0.5">
+                  {labels ? t(labels.name) : layer.layer}
+                </div>
+                <div className="flex-1">
+                  <StatusBadge status={layer.status} />
+                  <p className="text-xs text-ink-400 mt-2 leading-relaxed">{labels ? t(labels.note) : layer.note}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -69,7 +81,7 @@ export default function SystemStatusPage() {
           <MetricCard
             label={t("status.metricVisionCoverage")}
             value={`${meta.vision_coverage.analyzed ?? 0} / ${meta.vision_coverage.total}`}
-            sub={meta.vision_coverage.note}
+            sub={t("status.visionCoverageNote")}
           />
           <MetricCard
             label={t("status.metricDecisionCoverage")}

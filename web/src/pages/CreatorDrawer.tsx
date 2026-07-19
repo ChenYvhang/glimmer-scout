@@ -15,7 +15,7 @@ import type { Creator, Product } from "../lib/schema";
 import { addToCandidatePool, removeFromCandidatePool } from "../lib/candidatePool";
 import { useCandidatePool } from "../lib/useCandidatePool";
 import { getOutcome, saveOutcome } from "../lib/outcomeStore";
-import { useLocale } from "../lib/i18n";
+import { useLocale, verticalLabel } from "../lib/i18n";
 
 interface Props {
   creator: Creator;
@@ -103,7 +103,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
           {/* Layer 1: 基础信息 */}
           <Section title={t("drawer.section1")}>
             <div className="grid grid-cols-3 gap-3 text-sm">
-              <Stat label={t("drawer.statVertical")} value={creator.vertical} />
+              <Stat label={t("drawer.statVertical")} value={verticalLabel(t, creator.vertical)} />
               <Stat label={t("drawer.statCountry")} value={creator.country ?? t("drawer.statCountryUnknown")} />
               <Stat label={t("drawer.statSubscribers")} value={fmtNum(creator.subscriber_count)} />
               <Stat label={t("drawer.statViews")} value={fmtNum(creator.view_count_total)} />
