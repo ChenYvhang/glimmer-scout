@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { en, zh, type TranslationKey } from "./dictionaries";
 
 export type { TranslationKey };
@@ -31,6 +31,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(LOCALE_KEY, l);
     setLocaleState(l);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const t = useCallback(
     (key: TranslationKey, vars?: Record<string, string | number>) =>

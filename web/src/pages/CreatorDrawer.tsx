@@ -60,8 +60,8 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={onClose} />
-      <div className="relative w-full max-w-[720px] h-full bg-[#0d1448] border-l border-white/10 overflow-y-auto shadow-2xl animate-slide-in-right">
-        <div className="sticky top-0 bg-[#0d1448]/95 backdrop-blur border-b border-white/10 px-6 py-4 flex items-start justify-between gap-4">
+      <div className="relative w-full max-w-[720px] h-full bg-[#090d4c] border-l border-white/10 overflow-y-auto shadow-2xl animate-slide-in-right">
+        <div className="sticky top-0 bg-[#090d4c]/95 backdrop-blur border-b border-white/10 px-6 py-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-ink-100 truncate">{creator.title}</h2>
             <a
@@ -138,11 +138,11 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
               <div className="h-40">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={velocitySeries} margin={{ left: -20, top: 4, right: 8 }}>
-                    <CartesianGrid stroke="#26307c" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#1f2483" strokeDasharray="3 3" />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8b8f9c" }} minTickGap={40} />
                     <YAxis tick={{ fontSize: 10, fill: "#8b8f9c" }} width={36} />
                     <Tooltip
-                      contentStyle={{ background: "#16205e", border: "1px solid #2c3782", fontSize: 12 }}
+                      contentStyle={{ background: "#111763", border: "1px solid #242a8a", fontSize: 12 }}
                       labelStyle={{ color: "#e5e7eb" }}
                     />
                     <Line
@@ -227,7 +227,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                               <BarChart data={breakdown} layout="vertical" margin={{ left: 0, right: 8 }}>
                                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: "#8b8f9c" }} />
                                 <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "#8b8f9c" }} />
-                                <Tooltip contentStyle={{ background: "#16205e", border: "1px solid #2c3782", fontSize: 12 }} />
+                                <Tooltip contentStyle={{ background: "#111763", border: "1px solid #242a8a", fontSize: 12 }} />
                                 <Bar dataKey="value" fill="#ff8b26" radius={[0, 4, 4, 0]} />
                               </BarChart>
                             </ResponsiveContainer>
@@ -240,7 +240,7 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                               <BarChart data={contributions} layout="vertical" margin={{ left: 0, right: 8 }}>
                                 <XAxis type="number" tick={{ fontSize: 10, fill: "#8b8f9c" }} />
                                 <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "#8b8f9c" }} />
-                                <Tooltip contentStyle={{ background: "#16205e", border: "1px solid #2c3782", fontSize: 12 }} />
+                                <Tooltip contentStyle={{ background: "#111763", border: "1px solid #242a8a", fontSize: 12 }} />
                                 <Bar dataKey="value" fill="#6b7280" radius={[0, 4, 4, 0]} />
                               </BarChart>
                             </ResponsiveContainer>
@@ -332,7 +332,7 @@ function ConfidenceRange({ value, lo, hi }: { value: number; lo: number; hi: num
 }
 
 function ScriptsPanel({ creator }: { creator: Creator }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const scripts = creator.scripts;
   const [platform, setPlatform] = useState<"tiktok_vertical" | "youtube_horizontal">("tiktok_vertical");
   const [language, setLanguage] = useState<"zh" | "en">("zh");
@@ -414,7 +414,8 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
               <p className="text-xs text-ink-400">{active.cta_placement}</p>
             </div>
             <div className="bg-white/5 rounded-md p-2 text-[11px] text-ink-600">
-              {t("drawer.scriptEvidence")}《{active.referenced_evidence.video_title}》 ·
+              {t("drawer.scriptEvidence")}
+              {locale === "en" ? `"${active.referenced_evidence.video_title}"` : `《${active.referenced_evidence.video_title}》`} ·
               "{active.referenced_evidence.vision_evidence_quote}" · {active.referenced_evidence.top_feature_breakdown_dim}
             </div>
             <div className="flex gap-2 pt-1">
@@ -478,7 +479,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
 }
 
 function OutcomeForm({ creator, products }: { creator: Creator; products: Product[] }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const defaultProductId = creator.decision?.recommended_product ?? products[0]?.id ?? "";
   const [productId, setProductId] = useState(defaultProductId);
   const existing = getOutcome(creator.channel_id, productId);
@@ -518,7 +519,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           <select
             value={productId}
             onChange={(e) => handleProductChange(e.target.value)}
-            className="bg-[#0d1448] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100"
+            className="bg-[#090d4c] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100"
           >
             {products.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -534,7 +535,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
             min={0}
             value={actualViews}
             onChange={(e) => setActualViews(e.target.value)}
-            className="w-full bg-[#0d1448] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
+            className="w-full bg-[#090d4c] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
           />
         </div>
         <div>
@@ -545,7 +546,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
             step={0.01}
             value={engagementRate}
             onChange={(e) => setEngagementRate(e.target.value)}
-            className="w-full bg-[#0d1448] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
+            className="w-full bg-[#090d4c] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 tabular-nums"
           />
         </div>
       </div>
@@ -564,7 +565,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          className="w-full bg-[#0d1448] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 resize-none"
+          className="w-full bg-[#090d4c] border border-white/15 rounded-md text-sm px-2.5 py-1.5 text-ink-100 resize-none"
         />
       </div>
       <div className="flex items-center gap-3">
@@ -575,7 +576,7 @@ function OutcomeForm({ creator, products }: { creator: Creator; products: Produc
           {t("outcome.save")}
         </button>
         {savedAt && (
-          <span className="text-[11px] text-ink-600">{t("outcome.saved", { time: new Date(savedAt).toLocaleString("zh-CN") })}</span>
+          <span className="text-[11px] text-ink-600">{t("outcome.saved", { time: new Date(savedAt).toLocaleString(locale === "en" ? "en-US" : "zh-CN") })}</span>
         )}
       </div>
     </form>

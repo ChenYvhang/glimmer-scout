@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { useLocale } from "../lib/i18n";
 
 export default function SystemStatusPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { data, loading } = useDataset();
   if (loading || !data) return <Loading />;
 
@@ -17,7 +17,7 @@ export default function SystemStatusPage() {
       <div>
         <h1 className="text-[32px] font-bold text-ink-100 mb-1">{t("status.title")}</h1>
         <p className="text-sm text-ink-400">
-          {t("status.fetchedAt", { time: new Date(meta.fetched_at).toLocaleString("zh-CN") })}
+          {t("status.fetchedAt", { time: new Date(meta.fetched_at).toLocaleString(locale === "en" ? "en-US" : "zh-CN") })}
         </p>
         <div className="mt-2">
           <FlywheelCounter channelCount={meta.channel_count} />

@@ -344,7 +344,7 @@ export const en: Record<TranslationKey, string> = {
   "drawer.statVideoCount": "Total videos",
   "drawer.statChannelAge": "Channel age (days)",
   "drawer.statMomentumAccel": "Acceleration (momentum_acceleration)",
-  "drawer.statAdjustedMomentum": "Season-adjusted momentum",
+  "drawer.statAdjustedMomentum": "Season-adjusted momentum (adjusted_momentum)",
   "drawer.statInflection": "Inflection date",
   "drawer.statInflectionNone": "None",
   "drawer.statCadence90d": "Uploads in last 90d",
@@ -475,7 +475,7 @@ export const en: Record<TranslationKey, string> = {
   "dim.gear_visibility": "Gear visibility",
   "dim.narrative_pace": "Narrative pace",
   "dim.scene_diversity": "Scene diversity",
-  "dim.slow_motion_demand": "Slow-motion / bullet-time use",
+  "dim.slow_motion_demand": "Slow-motion / bullet-time demand",
 
   "statusBadge.live": "Live",
   "statusBadge.live_with_caveat": "Live (with caveat)",
