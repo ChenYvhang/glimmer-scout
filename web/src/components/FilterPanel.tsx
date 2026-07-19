@@ -46,12 +46,12 @@ function TagMultiSelect({
       <div className="relative">
         <button
           onClick={() => setOpen((o) => !o)}
-          className="w-full text-left bg-[#0d1448] border border-white/10 rounded-md text-xs px-2.5 py-1.5 text-ink-400 hover:border-white/20 transition-colors"
+          className="w-full text-left bg-[#090d4c] border border-white/10 rounded-md text-xs px-2.5 py-1.5 text-ink-400 hover:border-white/20 transition-colors"
         >
           {t("filter.addFilter")}
         </button>
         {open && (
-          <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-[#16205e] border border-white/15 rounded-md shadow-lg">
+          <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-[#111763] border border-white/15 rounded-md shadow-lg">
             {available.length === 0 && <div className="px-2.5 py-1.5 text-xs text-ink-600">{t("filter.noMoreOptions")}</div>}
             {available.map((o) => (
               <button

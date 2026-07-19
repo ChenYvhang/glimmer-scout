@@ -82,7 +82,7 @@ function ThumbSymbol({ cx, cy, size, payload, hoveredId, onHover, inPool, onRepo
           onError={() => setBroken(true)}
         />
       ) : (
-        <circle cx={cx} cy={cy} r={r} fill="#26307c" />
+        <circle cx={cx} cy={cy} r={r} fill="#1f2483" />
       )}
       <circle
         cx={cx}
@@ -94,10 +94,10 @@ function ThumbSymbol({ cx, cy, size, payload, hoveredId, onHover, inPool, onRepo
       />
       {inPool && (
         <g>
-          <circle cx={cx + r * 0.72} cy={cy - r * 0.72} r={5} fill="#e5e7eb" stroke="#070d38" strokeWidth={1} />
+          <circle cx={cx + r * 0.72} cy={cy - r * 0.72} r={5} fill="#e5e7eb" stroke="#04073b" strokeWidth={1} />
           <path
             d={`M ${cx + r * 0.72 - 2.2} ${cy - r * 0.72} l 1.6 1.6 l 3 -3.2`}
-            stroke="#070d38"
+            stroke="#04073b"
             strokeWidth={1.2}
             fill="none"
             strokeLinecap="round"
@@ -249,8 +249,8 @@ export default function ScatterMatrix({
               fill="transparent"
               label={{ value: t("scatter.quadrantSkip"), position: "insideBottomLeft", fill: "#5b5f6b", fontSize: 11 }}
             />
-            <ReferenceLine x={QUADRANT_SPLIT} stroke="#2c3782" strokeDasharray="3 3" />
-            <ReferenceLine y={QUADRANT_SPLIT} stroke="#2c3782" strokeDasharray="3 3" />
+            <ReferenceLine x={QUADRANT_SPLIT} stroke="#242a8a" strokeDasharray="3 3" />
+            <ReferenceLine y={QUADRANT_SPLIT} stroke="#242a8a" strokeDasharray="3 3" />
 
             <Tooltip
               cursor={{ strokeDasharray: "3 3" }}
@@ -258,7 +258,7 @@ export default function ScatterMatrix({
                 if (!active || !payload?.length) return null;
                 const p = payload[0].payload as ScatterPlotPoint;
                 return (
-                  <div className="flex gap-2 bg-[#16205e] border border-white/15 rounded-md p-2 text-xs max-w-[220px]">
+                  <div className="flex gap-2 bg-[#111763] border border-white/15 rounded-md p-2 text-xs max-w-[220px]">
                     {p.thumbnail && (
                       <img src={p.thumbnail} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
                     )}
