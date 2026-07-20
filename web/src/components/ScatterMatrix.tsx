@@ -117,11 +117,15 @@ function ThumbSymbol({
         </g>
       )}
       {hovered && payload.channel_url && (
-        <g
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(payload.channel_url, "_blank", "noopener,noreferrer");
-          }}
+        // A real <a> (not a click handler + window.open) so the new-tab
+        // navigation is a native link activation: it can't be silently
+        // eaten by a popup blocker the way a scripted window.open() can.
+        <a
+          href={payload.channel_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           style={{ cursor: "pointer" }}
         >
           <title>{openChannelLabel}</title>
@@ -134,7 +138,7 @@ function ThumbSymbol({
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-        </g>
+        </a>
       )}
     </g>
   );
