@@ -84,6 +84,7 @@ export default function MatrixPage() {
           combined: Math.sqrt(Math.max(potential, 0) * Math.max(r.value, 0)),
           subscriber_count: c.subscriber_count,
           thumbnail: c.thumbnails[0],
+          channel_url: c.channel_url,
           hasDecision: c.decision !== null,
         };
       })

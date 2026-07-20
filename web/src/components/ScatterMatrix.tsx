@@ -22,6 +22,7 @@ export interface ScatterPlotPoint {
   combined: number;
   subscriber_count: number;
   thumbnail?: string;
+  channel_url?: string;
 }
 
 const QUADRANT_SPLIT = 50;
@@ -42,9 +43,20 @@ interface ThumbSymbolProps {
   onHover: (id: string | null) => void;
   inPool: boolean;
   onReportPosition: (channelId: string, cx: number, cy: number) => void;
+  openChannelLabel: string;
 }
 
-function ThumbSymbol({ cx, cy, size, payload, hoveredId, onHover, inPool, onReportPosition }: ThumbSymbolProps) {
+function ThumbSymbol({
+  cx,
+  cy,
+  size,
+  payload,
+  hoveredId,
+  onHover,
+  inPool,
+  onReportPosition,
+  openChannelLabel,
+}: ThumbSymbolProps) {
   const [broken, setBroken] = useState(false);
   if (cx === undefined || cy === undefined || !payload) return null;
   onReportPosition(payload.channel_id, cx, cy);
@@ -101,6 +113,26 @@ function ThumbSymbol({ cx, cy, size, payload, hoveredId, onHover, inPool, onRepo
             strokeWidth={1.2}
             fill="none"
             strokeLinecap="round"
+          />
+        </g>
+      )}
+      {hovered && payload.channel_url && (
+        <g
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(payload.channel_url, "_blank", "noopener,noreferrer");
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          <title>{openChannelLabel}</title>
+          <circle cx={cx + r * 0.72} cy={cy + r * 0.72} r={7} fill="#e5e7eb" stroke="#04073b" strokeWidth={1} />
+          <path
+            d={`M ${cx + r * 0.72 - 2.3} ${cy + r * 0.72 + 2.3} L ${cx + r * 0.72 + 2.3} ${cy + r * 0.72 - 2.3} M ${cx + r * 0.72 - 0.3} ${cy + r * 0.72 - 2.3} L ${cx + r * 0.72 + 2.3} ${cy + r * 0.72 - 2.3} L ${cx + r * 0.72 + 2.3} ${cy + r * 0.72 - 0.3}`}
+            stroke="#04073b"
+            strokeWidth={1.2}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </g>
       )}
@@ -295,6 +327,7 @@ export default function ScatterMatrix({
                     onHover={setHoveredId}
                     inPool={p.payload ? poolIds.has(p.payload.channel_id) : false}
                     onReportPosition={(id, cx, cy) => positionsRef.current.set(id, { cx, cy })}
+                    openChannelLabel={t("scatter.openChannel")}
                   />
                 );
               }}

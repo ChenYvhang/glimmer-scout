@@ -46,6 +46,7 @@ export const zh = {
   "scatter.legendIgnition": "引爆候选（P≥50 且 R≥50）",
   "scatter.legendSize": "圆点大小 = 订阅数 · 悬停放大预览 · 拖拽框选批量加入候选池",
   "scatter.current": "当前：",
+  "scatter.openChannel": "在新标签页打开主页",
 
   "filter.title": "筛选",
   "filter.vertical": "垂类",
@@ -311,6 +312,7 @@ export const en: Record<TranslationKey, string> = {
   "scatter.legendIgnition": "Ignition candidate (P≥50 and R≥50)",
   "scatter.legendSize": "Dot size = subscriber count · hover to zoom · drag to batch-add to the pool",
   "scatter.current": "Now: ",
+  "scatter.openChannel": "Open channel in new tab",
 
   "filter.title": "Filters",
   "filter.vertical": "Vertical",
