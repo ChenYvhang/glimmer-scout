@@ -79,3 +79,29 @@ export function paceLabel(t: LocaleContextValue["t"], raw: string): string {
 export function productFeatureLabel(t: LocaleContextValue["t"], raw: string): string {
   return rawLabel(t, "productFeature", raw);
 }
+
+// Free-text LLM output (vision.evidence, decision.reasoning, etc.) isn't a
+// fixed vocabulary — a dictionary lookup like rawLabel() can't cover it, it
+// needs a real translation on disk (pipeline/translate_content.py). `en`
+// missing/null means "not translated yet", not "nothing to translate", so
+// this falls back to the Chinese original and flags `pending` so the caller
+// can show a "showing original" note instead of silently mixing languages.
+export function localizedText(
+  locale: Locale,
+  zh_: string,
+  en_?: string | null,
+): { text: string; pending: boolean } {
+  if (locale !== "en") return { text: zh_, pending: false };
+  if (en_) return { text: en_, pending: false };
+  return { text: zh_, pending: true };
+}
+
+export function localizedList(
+  locale: Locale,
+  zh_: string[],
+  en_?: string[] | null,
+): { items: string[]; pending: boolean } {
+  if (locale !== "en") return { items: zh_, pending: false };
+  if (en_ && en_.length === zh_.length) return { items: en_, pending: false };
+  return { items: zh_, pending: true };
+}

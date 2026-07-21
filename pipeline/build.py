@@ -32,6 +32,7 @@ VISION_CACHE_DIR = ROOT / "cache" / "vision"
 DECISIONS_CACHE_DIR = ROOT / "cache" / "decisions"
 SCRIPTS_CACHE_DIR = ROOT / "cache" / "scripts"
 VARIANT_TRANSLATIONS_CACHE_DIR = ROOT / "cache" / "variant_translations"
+CONTENT_TRANSLATIONS_CACHE_DIR = ROOT / "cache" / "content_translations"
 PRODUCTS_PATH = ROOT / "config" / "products.yaml"
 DATASET_OUT_PATH = ROOT.parent / "web" / "public" / "dataset.json"
 
@@ -108,6 +109,18 @@ def load_variant_translations_cache() -> dict:
     return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in VARIANT_TRANSLATIONS_CACHE_DIR.glob("*.json")}
 
 
+def load_content_translations_cache() -> dict:
+    """pipeline/translate_content.py output: real English translations of
+    vision.evidence/sport_types and decision.reasoning/localization_notes/
+    risk_review.conclusion/price_range.basis — free-text LLM output that
+    isn't a fixed vocabulary (unlike camera_perspective/narrative_pace,
+    which the frontend already translates via a dictionary lookup). Missing
+    here just means "not translated yet" — build_creator must not fabricate one."""
+    if not CONTENT_TRANSLATIONS_CACHE_DIR.exists():
+        return {}
+    return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in CONTENT_TRANSLATIONS_CACHE_DIR.glob("*.json")}
+
+
 def load_scripts_for(channel_id: str, product_id: str) -> list[dict] | None:
     """pipeline/scripts.py writes one file per (channel, product, platform,
     language): {channel_id}_{product_id}_{platform}_{language}.json. Glob by
@@ -134,6 +147,7 @@ def build_creator(
     vision: dict | None,
     decision: dict | None,
     variant_translation: dict | None = None,
+    content_translation: dict | None = None,
 ) -> dict:
     videos_out = [{k: v.get(k) for k in VIDEO_FIELDS} for v in channel["videos"]]
     thumbnails = [v["thumbnail_url"] for v in sorted(channel["videos"], key=lambda v: v["published_at"], reverse=True) if v.get("thumbnail_url")][:8]
@@ -141,6 +155,19 @@ def build_creator(
     potential = score_entry.get("potential") if score_entry else None
     resonance = score_entry.get("resonance") if score_entry else None
     market, language = derive_market_language(channel.get("country"))
+
+    vision_out = vision
+    if vision is not None:
+        # pipeline/translate_content.py output, if this channel's been
+        # translated yet — sport_types/evidence are free-text LLM output
+        # (232 distinct sport_types values seen), not a fixed vocabulary the
+        # frontend can look up in a dictionary. None means "not translated
+        # yet", not "nothing to translate".
+        vision_out = {
+            **vision,
+            "sport_types_en": content_translation["sport_types_en"] if content_translation else None,
+            "evidence_en": content_translation["evidence_en"] if content_translation else None,
+        }
 
     decision_out = decision
     if decision is not None:
@@ -154,7 +181,20 @@ def build_creator(
             if variant_translation
             else []
         )
-        decision_out = {**decision, "creative_variants": zh_variants + en_variants}
+        decision_out = {
+            **decision,
+            "creative_variants": zh_variants + en_variants,
+            "reasoning_en": content_translation["reasoning_en"] if content_translation else None,
+            "localization_notes_en": content_translation["localization_notes_en"] if content_translation else None,
+            "risk_review": {
+                **decision["risk_review"],
+                "conclusion_en": content_translation["risk_review_conclusion_en"] if content_translation else None,
+            },
+            "price_range": {
+                **decision["price_range"],
+                "basis_en": content_translation["price_range_basis_en"] if content_translation else None,
+            },
+        }
 
     return {
         "channel_id": channel["channel_id"],
@@ -171,7 +211,7 @@ def build_creator(
         "thumbnails": thumbnails,
         "videos": videos_out,
         "features": channel.get("features"),
-        "vision": vision,  # None if not yet analyzed — frontend must render "待分析"
+        "vision": vision_out,  # None if not yet analyzed — frontend must render "待分析"
         "scores": {
             # potential is {"value","value_lo","value_hi","rank_score"} for
             # dual_head_gbdt, or just {"value"} for the heuristic fallback —
@@ -195,6 +235,7 @@ def run() -> dict:
     vision_cache = load_vision_cache()
     decisions_cache = load_decisions_cache()
     variant_translations_cache = load_variant_translations_cache()
+    content_translations_cache = load_content_translations_cache()
     products = load_products()
 
     channels = features_data["channels"]
@@ -211,6 +252,7 @@ def run() -> dict:
             vision_cache.get(cid),
             decisions_cache.get(cid),
             variant_translations_cache.get(cid),
+            content_translations_cache.get(cid),
         ))
     # Fill in the per-creator potential method now that we know it globally
     for c in creators:

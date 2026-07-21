@@ -15,7 +15,16 @@ import type { Creator, Product } from "../lib/schema";
 import { addToCandidatePool, removeFromCandidatePool } from "../lib/candidatePool";
 import { useCandidatePool } from "../lib/useCandidatePool";
 import { getOutcome, saveOutcome } from "../lib/outcomeStore";
-import { useLocale, verticalLabel, perspectiveLabel, paceLabel, productFeatureLabel, type TranslationKey } from "../lib/i18n";
+import {
+  useLocale,
+  verticalLabel,
+  perspectiveLabel,
+  paceLabel,
+  productFeatureLabel,
+  localizedText,
+  localizedList,
+  type TranslationKey,
+} from "../lib/i18n";
 
 interface Props {
   creator: Creator;
@@ -38,7 +47,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function CreatorDrawer({ creator, products, onClose }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const velocitySeries = useMemo(
     () =>
       creator.videos
@@ -171,19 +180,27 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
           {/* Layer 3: 视觉理解 */}
           <Section title={t("drawer.section3")}>
             {creator.vision ? (
-              <div className="space-y-2 text-sm">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <Stat label={t("drawer.visionSportTypes")} value={creator.vision.sport_types.join("、") || "—"} />
-                  <Stat label={t("drawer.visionPerspective")} value={perspectiveLabel(t, creator.vision.camera_perspective)} />
-                  <Stat label={t("drawer.visionPace")} value={paceLabel(t, creator.vision.narrative_pace)} />
-                  <Stat label={t("drawer.visionStabilization")} value={fmtNum(creator.vision.stabilization_demand, 2)} />
-                  <Stat label={t("drawer.visionExtremity")} value={fmtNum(creator.vision.scene_extremity, 2)} />
-                  <Stat label={t("drawer.visionGear")} value={fmtNum(creator.vision.gear_visibility, 2)} />
-                </div>
-                <p className="text-ink-400 text-xs leading-relaxed bg-white/5 rounded-md p-3 mt-2">
-                  {creator.vision.evidence}
-                </p>
-              </div>
+              (() => {
+                const sportTypes = localizedList(locale, creator.vision.sport_types, creator.vision.sport_types_en);
+                const evidence = localizedText(locale, creator.vision.evidence, creator.vision.evidence_en);
+                const pending = sportTypes.pending || evidence.pending;
+                return (
+                  <div className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                      <Stat label={t("drawer.visionSportTypes")} value={sportTypes.items.join(locale === "en" ? ", " : "、") || "—"} />
+                      <Stat label={t("drawer.visionPerspective")} value={perspectiveLabel(t, creator.vision.camera_perspective)} />
+                      <Stat label={t("drawer.visionPace")} value={paceLabel(t, creator.vision.narrative_pace)} />
+                      <Stat label={t("drawer.visionStabilization")} value={fmtNum(creator.vision.stabilization_demand, 2)} />
+                      <Stat label={t("drawer.visionExtremity")} value={fmtNum(creator.vision.scene_extremity, 2)} />
+                      <Stat label={t("drawer.visionGear")} value={fmtNum(creator.vision.gear_visibility, 2)} />
+                    </div>
+                    {pending && <p className="text-ink-600 text-xs">{t("drawer.contentPendingTranslation")}</p>}
+                    <p className="text-ink-400 text-xs leading-relaxed bg-white/5 rounded-md p-3 mt-2">
+                      {evidence.text}
+                    </p>
+                  </div>
+                );
+              })()
             ) : (
               <p className="text-ink-400 text-sm">{t("drawer.visionNotAnalyzed")}</p>
             )}
@@ -264,7 +281,13 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
 
           {/* Layer 5: 决策卡 */}
           <Section title={t("drawer.section5")}>
-            {creator.decision ? (
+            {creator.decision ? (() => {
+              const reasoning = localizedText(locale, creator.decision.reasoning, creator.decision.reasoning_en);
+              const priceBasis = localizedText(locale, creator.decision.price_range.basis, creator.decision.price_range.basis_en);
+              const localizationNotes = localizedText(locale, creator.decision.localization_notes, creator.decision.localization_notes_en);
+              const riskConclusion = localizedText(locale, creator.decision.risk_review.conclusion, creator.decision.risk_review.conclusion_en);
+              const pending = reasoning.pending || priceBasis.pending || localizationNotes.pending || riskConclusion.pending;
+              return (
               <div className="space-y-3 text-sm">
                 <div className="flex flex-wrap gap-3 items-center">
                   <span className="px-2 py-1 rounded-md bg-accent/15 text-accent text-xs">
@@ -279,20 +302,22 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
                     </span>
                   )}
                 </div>
-                <p className="text-ink-100 leading-relaxed">{creator.decision.reasoning}</p>
+                {pending && <p className="text-ink-600 text-xs">{t("drawer.contentPendingTranslation")}</p>}
+                <p className="text-ink-100 leading-relaxed">{reasoning.text}</p>
                 <div className="text-xs text-ink-400">
                   {t("drawer.priceRange")}
                   {creator.decision.price_range.min !== null
                     ? ` $${creator.decision.price_range.min} - $${creator.decision.price_range.max}`
                     : ` ${t("drawer.priceUnavailable")}`}
-                  {creator.decision.price_range.basis && ` · ${creator.decision.price_range.basis}`}
+                  {priceBasis.text && ` · ${priceBasis.text}`}
                 </div>
-                <div className="text-xs text-ink-400">{creator.decision.localization_notes}</div>
+                <div className="text-xs text-ink-400">{localizationNotes.text}</div>
                 {creator.decision.risk_review.competitor_flag && (
-                  <p className="text-xs text-red-300/80">{creator.decision.risk_review.conclusion}</p>
+                  <p className="text-xs text-red-300/80">{riskConclusion.text}</p>
                 )}
               </div>
-            ) : (
+              );
+            })() : (
               <p className="text-ink-400 text-sm">{t("drawer.decisionNotGenerated")}</p>
             )}
           </Section>

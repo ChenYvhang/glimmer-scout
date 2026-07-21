@@ -195,6 +195,13 @@ export interface CreatorVision {
   model: string;
   source_video_ids: string[];
   analyzed_at: string;
+  // pipeline/translate_content.py output. sport_types/evidence are free-text
+  // LLM output (not a fixed vocabulary like camera_perspective/narrative_pace,
+  // which the frontend translates via dictionary lookup), so they need a real
+  // translation on disk — null/undefined means "not translated yet", not
+  // "nothing to translate".
+  sport_types_en?: string[] | null;
+  evidence_en?: string | null;
 }
 
 export interface PotentialScore {
@@ -236,6 +243,8 @@ export interface RiskReview {
   competitor_flag: boolean;
   flagged_keywords: string[];
   conclusion: string;
+  // pipeline/translate_content.py; null/undefined = not translated yet.
+  conclusion_en?: string | null;
 }
 
 export interface PriceRange {
@@ -243,6 +252,8 @@ export interface PriceRange {
   max: number | null;
   currency: string;
   basis: string;
+  // pipeline/translate_content.py; null/undefined = not translated yet.
+  basis_en?: string | null;
 }
 
 export interface CreatorDecision {
@@ -255,6 +266,10 @@ export interface CreatorDecision {
   price_range: PriceRange;
   risk_review: RiskReview;
   localization_notes: string;
+  // pipeline/translate_content.py output — free-text LLM output, needs a
+  // real translation on disk. null/undefined = not translated yet.
+  reasoning_en?: string | null;
+  localization_notes_en?: string | null;
 }
 
 export interface ScriptEvidence {
