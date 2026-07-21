@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from "recharts";
 import type { Creator, Product } from "../lib/schema";
-import { useLocale, type TranslationKey } from "../lib/i18n";
+import { useLocale, productFeatureLabel, type TranslationKey } from "../lib/i18n";
 
 const DIMENSION_KEYS: TranslationKey[] = [
   "dim.perspective_ratio", "dim.stabilization_demand", "dim.motion_complexity", "dim.scene_extremity",
@@ -151,7 +151,7 @@ export default function CompareModal({
                 <tbody>
                   {allDims.map((dim) => (
                     <tr key={dim} className="border-t border-white/5">
-                      <td className="px-3 py-2 text-ink-400">{dim}</td>
+                      <td className="px-3 py-2 text-ink-400">{productFeatureLabel(t, dim)}</td>
                       {creators.map((c) => (
                         <td key={c.channel_id} className="px-3 py-2 text-right text-ink-100 tabular-nums">
                           {fmtNum(c.scores.resonance?.[activeProductId]?.feature_breakdown?.[dim], 0)}

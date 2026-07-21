@@ -133,6 +133,7 @@ export const zh = {
   "drawer.decisionNotGenerated": "未生成——决策卡仅对综合分 Top-60 预生成。",
   "drawer.scriptsFull": "完整脚本",
   "drawer.scriptsLight": "脚本方向（轻量版，未进入 Top-20 完整脚本生成）",
+  "drawer.scriptsLightPendingTranslation": "英文译文暂未生成，以下为中文原文",
   "drawer.scriptsNone": "未生成——裂变脚本仅对综合分 Top-60（轻量）/ Top-20（完整）预生成。",
   "drawer.scriptsMissingCombo": "该 platform × language 组合暂未生成。",
   "drawer.platformTiktok": "TikTok 竖版",
@@ -198,6 +199,8 @@ export const zh = {
   "backtest.permRankerTitle": "排序头（Spearman 相关系数下降）",
   "backtest.permRegressorTitle": "概率头（负 MAE 下降）",
   "backtest.evalRows": "n_eval_rows={n}",
+  "backtest.featureImportanceMethodGain": "基于 LightGBM 内置增益重要性（gain importance），取 GroupKFold 各折平均。注意这不是 permutation importance——是训练阶段的分裂增益，不是留出集扰动测试，可能偏向取值更分散的特征，仅供参考排序，不作为唯一依据。",
+  "backtest.permutationImportanceMethodSklearn": "sklearn.inspection.permutation_importance：在 auxiliary_holdout 独立留出频道上逐列打乱特征、测量指标下降幅度（排序头用预测值与真实标签的Spearman相关系数下降，概率头用负MAE下降），n_repeats=20，负值（打乱后指标反而变好，视为噪声）截断为0后按占比换算。与上面 feature_importance（训练期分裂增益）互补——这个是留出集扰动测试，更贴近真实泛化重要性。",
 
   "status.title": "系统状态",
   "status.fetchedAt": "采集基准时间 {time}",
@@ -266,6 +269,23 @@ export const zh = {
   "feature.channel_age_days_at_window_end": "频道年龄（窗口末，天）",
   "feature.window_momentum_acceleration": "窗口内动能加速度",
   "feature.season_adjusted_relative_velocity_mean": "季节调整后动能均值",
+
+  "pace.快节奏": "快节奏",
+  "pace.中等节奏": "中等节奏",
+  "pace.慢节奏": "慢节奏",
+
+  "perspective.混合": "混合",
+  "perspective.第一人称为主": "第一人称为主",
+  "perspective.第三人称为主": "第三人称为主",
+  "perspective.第三人称为主 / 混合": "第三人称为主 / 混合",
+  "perspective.第一人称为主 / 混合": "第一人称为主 / 混合",
+  "perspective.第一人称与第三人称大致各半": "第一人称与第三人称大致各半",
+  "perspective.第三人称为主，部分第一人称": "第三人称为主，部分第一人称",
+
+  "productFeature.隐形自拍杆": "隐形自拍杆",
+  "productFeature.子弹时间": "子弹时间",
+  "productFeature.防抖": "防抖",
+  "productFeature.超广角": "超广角",
 } as const;
 
 export type TranslationKey = keyof typeof zh;
@@ -399,6 +419,7 @@ export const en: Record<TranslationKey, string> = {
   "drawer.decisionNotGenerated": "Not generated — decision cards are only pre-generated for the combined-score Top-60.",
   "drawer.scriptsFull": "Full script",
   "drawer.scriptsLight": "Script direction (lightweight — not in the Top-20 full-script batch)",
+  "drawer.scriptsLightPendingTranslation": "English translation not generated yet — showing the original Chinese.",
   "drawer.scriptsNone": "Not generated — fission scripts are only pre-generated for the Top-60 (lightweight) / Top-20 (full).",
   "drawer.scriptsMissingCombo": "This platform × language combination hasn't been generated yet.",
   "drawer.platformTiktok": "TikTok vertical",
@@ -464,6 +485,8 @@ export const en: Record<TranslationKey, string> = {
   "backtest.permRankerTitle": "Ranker head (Spearman correlation drop)",
   "backtest.permRegressorTitle": "Probability head (negative-MAE drop)",
   "backtest.evalRows": "n_eval_rows={n}",
+  "backtest.featureImportanceMethodGain": "Based on LightGBM's built-in gain importance, averaged across GroupKFold folds. Note this is not permutation importance — it's training-time split gain, not a held-out perturbation test, and can be biased toward features with more spread-out values. For reference ranking only, not a sole basis for decisions.",
+  "backtest.permutationImportanceMethodSklearn": "sklearn.inspection.permutation_importance: on the independent auxiliary_holdout channels, each feature column is shuffled and the resulting metric drop is measured (ranker head: drop in Spearman correlation between predictions and true labels; probability head: drop in negative MAE), n_repeats=20. Negative values (metric improved after shuffling, treated as noise) are clipped to 0 before converting to a share. Complements feature_importance above (training-time split gain) — this is a held-out perturbation test, closer to true generalization importance.",
 
   "status.title": "System Status",
   "status.fetchedAt": "Data collected at {time}",
@@ -532,4 +555,21 @@ export const en: Record<TranslationKey, string> = {
   "feature.channel_age_days_at_window_end": "Channel age at window end (days)",
   "feature.window_momentum_acceleration": "Window momentum acceleration",
   "feature.season_adjusted_relative_velocity_mean": "Mean season-adjusted velocity",
+
+  "pace.快节奏": "Fast-paced",
+  "pace.中等节奏": "Moderate pace",
+  "pace.慢节奏": "Slow-paced",
+
+  "perspective.混合": "Mixed",
+  "perspective.第一人称为主": "Mostly first-person",
+  "perspective.第三人称为主": "Mostly third-person",
+  "perspective.第三人称为主 / 混合": "Mostly third-person / mixed",
+  "perspective.第一人称为主 / 混合": "Mostly first-person / mixed",
+  "perspective.第一人称与第三人称大致各半": "Roughly half first-person, half third-person",
+  "perspective.第三人称为主，部分第一人称": "Mostly third-person, some first-person",
+
+  "productFeature.隐形自拍杆": "Invisible selfie stick",
+  "productFeature.子弹时间": "Bullet time",
+  "productFeature.防抖": "Stabilization",
+  "productFeature.超广角": "Ultra-wide angle",
 };

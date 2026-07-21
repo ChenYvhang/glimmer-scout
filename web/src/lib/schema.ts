@@ -227,6 +227,9 @@ export interface CreativeVariant {
   subtitle_highlights: string[];
   target_platform_note: string;
   target_market: string;
+  // Absent on decisions built before pipeline/translate_variants.py existed;
+  // treat missing as "zh" (the original, pre-translation generation).
+  language?: "zh" | "en";
 }
 
 export interface RiskReview {

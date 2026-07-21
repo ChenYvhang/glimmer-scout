@@ -53,11 +53,29 @@ export function useLocale(): LocaleContextValue {
   return ctx;
 }
 
-// creator.vertical values come from the data pipeline as raw Chinese labels
-// (滑雪, 骑行, ...). Only the fixed, known set has a `vertical.*` dictionary
-// entry; anything else (a future category not yet translated) falls back to
-// the raw value instead of leaking a literal "vertical.xxx" key string.
-export function verticalLabel(t: LocaleContextValue["t"], raw: string): string {
-  const key = `vertical.${raw}` as TranslationKey;
+// Several pipeline-generated fields (creator.vertical, vision.camera_perspective,
+// vision.narrative_pace, resonance feature_breakdown keys) come from the data
+// pipeline as raw Chinese labels drawn from a small, mostly-fixed set. Only
+// values with a `<prefix>.*` dictionary entry get translated; anything else
+// (a future category not yet translated) falls back to the raw value instead
+// of leaking a literal "prefix.xxx" key string.
+function rawLabel(t: LocaleContextValue["t"], prefix: string, raw: string): string {
+  const key = `${prefix}.${raw}` as TranslationKey;
   return key in zh ? t(key) : raw;
+}
+
+export function verticalLabel(t: LocaleContextValue["t"], raw: string): string {
+  return rawLabel(t, "vertical", raw);
+}
+
+export function perspectiveLabel(t: LocaleContextValue["t"], raw: string): string {
+  return rawLabel(t, "perspective", raw);
+}
+
+export function paceLabel(t: LocaleContextValue["t"], raw: string): string {
+  return rawLabel(t, "pace", raw);
+}
+
+export function productFeatureLabel(t: LocaleContextValue["t"], raw: string): string {
+  return rawLabel(t, "productFeature", raw);
 }

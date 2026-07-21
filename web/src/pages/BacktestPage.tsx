@@ -35,6 +35,20 @@ const FEATURE_KEYS: Record<string, TranslationKey> = {
   season_adjusted_relative_velocity_mean: "feature.season_adjusted_relative_velocity_mean",
 };
 
+// potential_model.{feature_importance,permutation_importance}.method is a fixed
+// methodology caption written once by score.py (not per-creator content), so it
+// gets the same known-value-lookup + raw-fallback translation as the architecture
+// layer notes on the status page, rather than being left as raw pipeline text.
+const FEATURE_IMPORTANCE_METHOD_LABELS: Record<string, TranslationKey> = {
+  "基于 LightGBM 内置增益重要性（gain importance），取 GroupKFold 各折平均。注意这不是 permutation importance——是训练阶段的分裂增益，不是留出集扰动测试，可能偏向取值更分散的特征，仅供参考排序，不作为唯一依据。":
+    "backtest.featureImportanceMethodGain",
+};
+
+const PERMUTATION_IMPORTANCE_METHOD_LABELS: Record<string, TranslationKey> = {
+  "sklearn.inspection.permutation_importance：在 auxiliary_holdout 独立留出频道上逐列打乱特征、测量指标下降幅度（排序头用预测值与真实标签的Spearman相关系数下降，概率头用负MAE下降），n_repeats=20，负值（打乱后指标反而变好，视为噪声）截断为0后按占比换算。与上面 feature_importance（训练期分裂增益）互补——这个是留出集扰动测试，更贴近真实泛化重要性。":
+    "backtest.permutationImportanceMethodSklearn",
+};
+
 export default function BacktestPage() {
   const { t } = useLocale();
   const { data, loading } = useDataset();
@@ -177,7 +191,11 @@ export default function BacktestPage() {
       {potential_model.feature_importance && (
         <section>
           <h2 className="text-xl font-medium text-ink-100 mb-1">{t("backtest.featureImportanceTitle")}</h2>
-          <p className="text-xs text-ink-600 mb-3">{potential_model.feature_importance.method}</p>
+          <p className="text-xs text-ink-600 mb-3">
+            {FEATURE_IMPORTANCE_METHOD_LABELS[potential_model.feature_importance.method]
+              ? t(FEATURE_IMPORTANCE_METHOD_LABELS[potential_model.feature_importance.method])
+              : potential_model.feature_importance.method}
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FeatureImportanceChart
               title={t("backtest.rankerTitle")}
@@ -195,7 +213,10 @@ export default function BacktestPage() {
         <section>
           <h2 className="text-xl font-medium text-ink-100 mb-1">{t("backtest.permImportanceTitle")}</h2>
           <p className="text-xs text-ink-600 mb-3">
-            {potential_model.permutation_importance.method}（{t("backtest.evalRows", { n: potential_model.permutation_importance.n_eval_rows })}）
+            {PERMUTATION_IMPORTANCE_METHOD_LABELS[potential_model.permutation_importance.method]
+              ? t(PERMUTATION_IMPORTANCE_METHOD_LABELS[potential_model.permutation_importance.method])
+              : potential_model.permutation_importance.method}
+            （{t("backtest.evalRows", { n: potential_model.permutation_importance.n_eval_rows })}）
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FeatureImportanceChart

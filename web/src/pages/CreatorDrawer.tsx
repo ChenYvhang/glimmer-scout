@@ -15,7 +15,7 @@ import type { Creator, Product } from "../lib/schema";
 import { addToCandidatePool, removeFromCandidatePool } from "../lib/candidatePool";
 import { useCandidatePool } from "../lib/useCandidatePool";
 import { getOutcome, saveOutcome } from "../lib/outcomeStore";
-import { useLocale, verticalLabel } from "../lib/i18n";
+import { useLocale, verticalLabel, perspectiveLabel, paceLabel, productFeatureLabel, type TranslationKey } from "../lib/i18n";
 
 interface Props {
   creator: Creator;
@@ -174,8 +174,8 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   <Stat label={t("drawer.visionSportTypes")} value={creator.vision.sport_types.join("、") || "—"} />
-                  <Stat label={t("drawer.visionPerspective")} value={creator.vision.camera_perspective} />
-                  <Stat label={t("drawer.visionPace")} value={creator.vision.narrative_pace} />
+                  <Stat label={t("drawer.visionPerspective")} value={perspectiveLabel(t, creator.vision.camera_perspective)} />
+                  <Stat label={t("drawer.visionPace")} value={paceLabel(t, creator.vision.narrative_pace)} />
                   <Stat label={t("drawer.visionStabilization")} value={fmtNum(creator.vision.stabilization_demand, 2)} />
                   <Stat label={t("drawer.visionExtremity")} value={fmtNum(creator.vision.scene_extremity, 2)} />
                   <Stat label={t("drawer.visionGear")} value={fmtNum(creator.vision.gear_visibility, 2)} />
@@ -211,8 +211,14 @@ export default function CreatorDrawer({ creator, products, onClose }: Props) {
               <div className="space-y-4">
                 {Object.entries(creator.scores.resonance).map(([productId, r]) => {
                   const product = productById.get(productId);
-                  const breakdown = Object.entries(r.feature_breakdown).map(([name, value]) => ({ name, value }));
-                  const contributions = r.contributions.map((c) => ({ name: c.dim, value: c.contribution }));
+                  const breakdown = Object.entries(r.feature_breakdown).map(([name, value]) => ({
+                    name: productFeatureLabel(t, name),
+                    value,
+                  }));
+                  const contributions = r.contributions.map((c) => ({
+                    name: t(`dim.${c.dim}` as TranslationKey),
+                    value: c.contribution,
+                  }));
                   return (
                     <div key={productId} className="border border-white/10 rounded-lg p-3 transition-colors duration-300 hover:border-white/20">
                       <div className="flex items-center justify-between mb-2">
@@ -335,7 +341,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
   const { t, locale } = useLocale();
   const scripts = creator.scripts;
   const [platform, setPlatform] = useState<"tiktok_vertical" | "youtube_horizontal">("tiktok_vertical");
-  const [language, setLanguage] = useState<"zh" | "en">("zh");
+  const [language, setLanguage] = useState<"zh" | "en">(locale === "en" ? "en" : "zh");
   const [copied, setCopied] = useState(false);
 
   const platformLabel = (p: "tiktok_vertical" | "youtube_horizontal") =>
@@ -416,7 +422,7 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
             <div className="bg-white/5 rounded-md p-2 text-[11px] text-ink-600">
               {t("drawer.scriptEvidence")}
               {locale === "en" ? `"${active.referenced_evidence.video_title}"` : `《${active.referenced_evidence.video_title}》`} ·
-              "{active.referenced_evidence.vision_evidence_quote}" · {active.referenced_evidence.top_feature_breakdown_dim}
+              "{active.referenced_evidence.vision_evidence_quote}" · {productFeatureLabel(t, active.referenced_evidence.top_feature_breakdown_dim)}
             </div>
             <div className="flex gap-2 pt-1">
               <button
@@ -453,12 +459,22 @@ function ScriptsPanel({ creator }: { creator: Creator }) {
   }
 
   if (creator.decision && creator.decision.creative_variants.length > 0) {
+    const allVariants = creator.decision.creative_variants;
+    const localized = allVariants.filter((v) => (v.language ?? "zh") === locale);
+    // localized is what's actually in the target language; when it's empty in
+    // EN mode, translate_variants.py hasn't covered this channel yet — fall
+    // back to the real Chinese content instead of hiding it, with a note.
+    const pendingTranslation = locale === "en" && localized.length === 0;
+    const shown = localized.length > 0 ? localized : allVariants.filter((v) => (v.language ?? "zh") === "zh");
     return (
       <div className="space-y-2 text-sm">
         <span className="inline-block px-2 py-0.5 rounded text-[11px] bg-white/5 text-ink-400 mb-1">
           {t("drawer.scriptsLight")}
         </span>
-        {creator.decision.creative_variants.map((variant) => (
+        {pendingTranslation && (
+          <p className="text-ink-600 text-xs">{t("drawer.scriptsLightPendingTranslation")}</p>
+        )}
+        {shown.map((variant) => (
           <div key={variant.variant_name} className="border border-white/10 rounded-lg p-3 transition-colors duration-300 hover:border-accent/30">
             <div className="font-medium text-ink-100 text-sm mb-1">{variant.variant_name}</div>
             <p className="text-ink-400 text-xs leading-relaxed mb-2">{variant.script_direction}</p>

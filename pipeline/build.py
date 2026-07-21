@@ -16,6 +16,7 @@ from pathlib import Path
 import yaml
 
 from pipeline.common.logging import get_logger
+from pipeline.common.variants import normalize_variant
 from pipeline.score import SUBSCRIBER_TIERS, TOP_K_LIST
 
 logger = get_logger("build")
@@ -30,6 +31,7 @@ VALIDATE_REPORT_PATH = ARTIFACTS_DIR / "validate_report.json"
 VISION_CACHE_DIR = ROOT / "cache" / "vision"
 DECISIONS_CACHE_DIR = ROOT / "cache" / "decisions"
 SCRIPTS_CACHE_DIR = ROOT / "cache" / "scripts"
+VARIANT_TRANSLATIONS_CACHE_DIR = ROOT / "cache" / "variant_translations"
 PRODUCTS_PATH = ROOT / "config" / "products.yaml"
 DATASET_OUT_PATH = ROOT.parent / "web" / "public" / "dataset.json"
 
@@ -96,6 +98,16 @@ def load_decisions_cache() -> dict:
     return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in DECISIONS_CACHE_DIR.glob("*.json")}
 
 
+def load_variant_translations_cache() -> dict:
+    """pipeline/translate_variants.py output: real English translations of
+    decide.py's creative_variants, for the decisions that don't have full
+    Top-20 scripts (which are already bilingual on their own). Missing here
+    just means "not translated yet" — build_creator must not fabricate one."""
+    if not VARIANT_TRANSLATIONS_CACHE_DIR.exists():
+        return {}
+    return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in VARIANT_TRANSLATIONS_CACHE_DIR.glob("*.json")}
+
+
 def load_scripts_for(channel_id: str, product_id: str) -> list[dict] | None:
     """pipeline/scripts.py writes one file per (channel, product, platform,
     language): {channel_id}_{product_id}_{platform}_{language}.json. Glob by
@@ -116,13 +128,33 @@ def load_products() -> list[dict]:
         return yaml.safe_load(f)["products"]
 
 
-def build_creator(channel: dict, score_entry: dict | None, vision: dict | None, decision: dict | None) -> dict:
+def build_creator(
+    channel: dict,
+    score_entry: dict | None,
+    vision: dict | None,
+    decision: dict | None,
+    variant_translation: dict | None = None,
+) -> dict:
     videos_out = [{k: v.get(k) for k in VIDEO_FIELDS} for v in channel["videos"]]
     thumbnails = [v["thumbnail_url"] for v in sorted(channel["videos"], key=lambda v: v["published_at"], reverse=True) if v.get("thumbnail_url")][:8]
 
     potential = score_entry.get("potential") if score_entry else None
     resonance = score_entry.get("resonance") if score_entry else None
     market, language = derive_market_language(channel.get("country"))
+
+    decision_out = decision
+    if decision is not None:
+        # Stamp language on the original Chinese variants and, if
+        # pipeline/translate_variants.py has translated this channel, append
+        # the real English versions — frontend filters decision.creative_variants
+        # by locale the same way it already filters scripts by platform/language.
+        zh_variants = [{**normalize_variant(v), "language": "zh"} for v in decision.get("creative_variants", [])]
+        en_variants = (
+            [{**v, "language": "en"} for v in variant_translation["creative_variants_en"]]
+            if variant_translation
+            else []
+        )
+        decision_out = {**decision, "creative_variants": zh_variants + en_variants}
 
     return {
         "channel_id": channel["channel_id"],
@@ -147,7 +179,7 @@ def build_creator(channel: dict, score_entry: dict | None, vision: dict | None, 
             "potential": {**potential, "method": None} if potential is not None else None,
             "resonance": resonance,  # dict of product_id -> {value, contributions, feature_breakdown}, or None
         },
-        "decision": decision,  # None if not in the pre-generated set — frontend must render "未生成"
+        "decision": decision_out,  # None if not in the pre-generated set — frontend must render "未生成"
         # Full scripts only exist for the Top-20 (pipeline/scripts.py); None
         # here means "not generated yet", not "no script exists" — frontend
         # falls back to decision.creative_variants when this is null.
@@ -162,6 +194,7 @@ def run() -> dict:
     validate_report = _load_json(VALIDATE_REPORT_PATH) or {}
     vision_cache = load_vision_cache()
     decisions_cache = load_decisions_cache()
+    variant_translations_cache = load_variant_translations_cache()
     products = load_products()
 
     channels = features_data["channels"]
@@ -177,6 +210,7 @@ def run() -> dict:
             scores_by_id.get(cid),
             vision_cache.get(cid),
             decisions_cache.get(cid),
+            variant_translations_cache.get(cid),
         ))
     # Fill in the per-creator potential method now that we know it globally
     for c in creators:
