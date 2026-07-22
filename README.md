@@ -198,6 +198,13 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4 + Recharts，四个页面：
 
 ---
 
+## 团队协作
+
+多人协作（分支、提交、Pull Request）的完整操作步骤见 **[CONTRIBUTING.md](./CONTRIBUTING.md)**
+（中韩双语，面向 GitHub 新手）。
+
+---
+
 ## 本地开发
 
 ### 环境要求
